@@ -1,0 +1,44 @@
+{
+  "note": "PROVISIONAL — generated from the sesame reference impl; the canonical signing-string layout must be reconciled against deployed rust-pois before this is treated as a published standard (handoff §3).",
+  "vectors": [
+    {
+      "description": "tier3, no channel",
+      "key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "iv_hex": "a0a1a2a3a4a5a6a7a8a9aaab",
+      "key_id": "encoder-7",
+      "timestamp": 1700000000,
+      "nonce_hex": "00112233445566778899aabbccddeeff",
+      "channel": null,
+      "plaintext_utf8": "top-secret avail payload",
+      "aad_utf8": "SESAME-AAD\nencoder-7\n1700000000\nABEiM0RVZneImaq7zN3u/w==\n",
+      "expected_ciphertext_hex": "92770c0036ae61cd0711a7b2711ba9b250dc3869fed82308",
+      "expected_tag_b64": "WFfnB26v6lk2Ntuv/VOTgg=="
+    },
+    {
+      "description": "tier3, channel scope bound in AAD",
+      "key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "iv_hex": "a0a1a2a3a4a5a6a7a8a9aaab",
+      "key_id": "encoder-7",
+      "timestamp": 1700000000,
+      "nonce_hex": "00112233445566778899aabbccddeeff",
+      "channel": "wxyz-hd",
+      "plaintext_utf8": "top-secret avail payload",
+      "aad_utf8": "SESAME-AAD\nencoder-7\n1700000000\nABEiM0RVZneImaq7zN3u/w==\nwxyz-hd",
+      "expected_ciphertext_hex": "92770c0036ae61cd0711a7b2711ba9b250dc3869fed82308",
+      "expected_tag_b64": "9VINAJ/KY95fJ7BWHfLzuQ=="
+    },
+    {
+      "description": "tier3, empty plaintext",
+      "key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "iv_hex": "a0a1a2a3a4a5a6a7a8a9aaab",
+      "key_id": "encoder-7",
+      "timestamp": 1700000000,
+      "nonce_hex": "00112233445566778899aabbccddeeff",
+      "channel": null,
+      "plaintext_utf8": "",
+      "aad_utf8": "SESAME-AAD\nencoder-7\n1700000000\nABEiM0RVZneImaq7zN3u/w==\n",
+      "expected_ciphertext_hex": "",
+      "expected_tag_b64": "ZBfpUuGOv0iAua0UFqgn6g=="
+    }
+  ]
+}

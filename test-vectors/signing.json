@@ -1,0 +1,47 @@
+{
+  "note": "PROVISIONAL — generated from the sesame reference impl; the canonical signing-string layout must be reconciled against deployed rust-pois before this is treated as a published standard (handoff §3).",
+  "vectors": [
+    {
+      "description": "tier1, no channel, empty body",
+      "version": "1",
+      "method": "POST",
+      "target": "/esam/signal",
+      "key_id": "encoder-7",
+      "key_hex": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+      "timestamp": 1700000000,
+      "nonce_hex": "00112233445566778899aabbccddeeff",
+      "channel": null,
+      "body_utf8": "",
+      "expected_signing_string": "SESAME-HMAC-SHA256\n1\nPOST\n/esam/signal\nencoder-7\n1700000000\nABEiM0RVZneImaq7zN3u/w==\n\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expected_signature_b64": "DRxaNNK9LUDBEstzRKZ4Noo5cbUrz5oxYFc/6Zvy3qw="
+    },
+    {
+      "description": "tier1+tier2, channel scope, xml body",
+      "version": "1",
+      "method": "POST",
+      "target": "/esam/signal?ack=1",
+      "key_id": "encoder-7",
+      "key_hex": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+      "timestamp": 1700000000,
+      "nonce_hex": "00112233445566778899aabbccddeeff",
+      "channel": "wxyz-hd",
+      "body_utf8": "<SignalProcessingNotification acquisitionPointIdentity=\"ap-1\"/>",
+      "expected_signing_string": "SESAME-HMAC-SHA256\n1\nPOST\n/esam/signal?ack=1\nencoder-7\n1700000000\nABEiM0RVZneImaq7zN3u/w==\nwxyz-hd\nd64f3b54575e97f16c49e93352343c6aa98924a8dc2ac55797472c83d356868f",
+      "expected_signature_b64": "lZbcQ00ObEdbNUgeZfYca9kFaLaqMEacHU5/B5H1ul4="
+    },
+    {
+      "description": "tier1, method lowercased on input is uppercased in canonical",
+      "version": "1",
+      "method": "get",
+      "target": "/esam/status",
+      "key_id": "decoder-3",
+      "key_hex": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+      "timestamp": 1699999999,
+      "nonce_hex": "00112233445566778899aabbccddeeff",
+      "channel": "kxyz-sd",
+      "body_utf8": "café ✓ π",
+      "expected_signing_string": "SESAME-HMAC-SHA256\n1\nGET\n/esam/status\ndecoder-3\n1699999999\nABEiM0RVZneImaq7zN3u/w==\nkxyz-sd\nfb47a95dfe88f953dc7f33328e2ef3eb1d06e4c9f1c2c95b52ffd7492f678a6b",
+      "expected_signature_b64": "O6KSSj1ko8KQsa7Agx+UrLs9uH2uy8G3vYVMLLA/wpI="
+    }
+  ]
+}

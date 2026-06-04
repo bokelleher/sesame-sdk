@@ -1,0 +1,59 @@
+[package]
+name = "sesame"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+license = "Apache-2.0"
+description = "SESAME — the proposed SCTE 130-9 security layer for the ESAM interface: HMAC-SHA256 authentication, channel-scoped authorization, and AES-256-GCM payload encryption carried in HTTP headers, with no ESAM XML schema change."
+repository = "https://github.com/REPLACE-ME/sesame"
+keywords = ["scte", "esam", "sesame", "hmac", "authentication"]
+categories = ["cryptography", "authentication"]
+readme = "README.md"
+exclude = ["/.github"]
+
+[features]
+# Default build is I/O-free: the pure crypto/protocol core plus the reference
+# in-memory NonceStore (pure std, no external I/O). Network/storage-backed stores
+# and the HTTP adapters are opt-in.
+default = ["memory-store"]
+
+# Reference single-node, in-memory NonceStore. Pure std; no external I/O.
+memory-store = []
+
+# serde derives on wire types (used by the conformance harness and the CLI).
+serde = ["dep:serde"]
+
+# Optional HTTP adapter for the common "Rust ADS" case: a `HeaderSource` impl
+# over `http::HeaderMap` (the type axum/hyper/tower all share) plus a verify
+# helper that drops into `axum::middleware::from_fn`. Named `axum` for
+# discoverability; a full tower `Layer` is a documented follow-up.
+axum = ["dep:http"]
+
+# CLI: sign/verify from the shell, and the test-vector generator.
+cli = ["serde", "dep:serde_json", "dep:clap"]
+
+[dependencies]
+# Pure crypto core — RustCrypto, no I/O, no async runtime.
+hmac = "0.12"
+sha2 = "0.10"
+aes-gcm = "0.10"
+base64 = "0.22"
+subtle = "2"
+
+# Optional.
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+http = { version = "1", optional = true }
+clap = { version = "4", features = ["derive"], optional = true }
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bin]]
+name = "sesame-gen-vectors"
+path = "src/bin/gen_vectors.rs"
+required-features = ["cli"]
+
+[package.metadata.docs.rs]
+all-features = true

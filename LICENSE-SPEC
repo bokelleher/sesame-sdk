@@ -1,0 +1,20 @@
+SESAME specification text — license
+====================================
+
+This file governs the *specification prose* in `SESAME.md` only. All source
+code in this repository is licensed under Apache-2.0 (see `LICENSE`).
+
+Status: OPEN DECISION (see handoff §10.3 — owner: Bo).
+
+The spec text is provisionally dedicated to the public domain under
+Creative Commons CC0 1.0 Universal, to maximize standards uptake:
+
+    https://creativecommons.org/publicdomain/zero/1.0/
+
+Rationale: a security *standard* wants the lowest possible friction for the
+second, third, and Nth implementer. CC0 lets anyone copy the wire rules into
+their own spec, RFC, or SCTE submission without an attribution-tracking
+obligation. The alternative under consideration is CC-BY-4.0, which keeps an
+attribution requirement. This must be confirmed before first publication;
+until then, treat the spec text as CC0 for internal use and do not rely on it
+externally.
