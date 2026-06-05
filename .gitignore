@@ -7,3 +7,6 @@
 
 # rust-pois integration handoff (lives canonically in /opt/pois)
 handoff-rust-sesame.md
+
+# rust-pois integration report (correspondence; not shipped)
+report-from-rust-pois.md

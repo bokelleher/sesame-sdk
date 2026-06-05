@@ -1,10 +1,11 @@
-SESAME specification text — license
-====================================
+SESAME specification text: license
+==================================
 
 This file governs the *specification prose* in `SESAME.md` only. All source
-code in this repository is licensed under Apache-2.0 (see `LICENSE`).
+code in this repository is dual-licensed under MIT or Apache-2.0 at your option
+(see `LICENSE-MIT` and `LICENSE-APACHE`).
 
-Status: OPEN DECISION (see handoff §10.3 — owner: Bo).
+Status: OPEN DECISION (see handoff §10.3; owner: Bo).
 
 The spec text is provisionally dedicated to the public domain under
 Creative Commons CC0 1.0 Universal, to maximize standards uptake:

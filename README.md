@@ -109,7 +109,7 @@ let params = ResponseParams {
 ## Open / commercial line
 
 The protocol, the pure core, and the trait seams (`KeyProvider`, `ReplayCache`)
-are open (Apache-2.0), as is the single-node reference replay cache. Operating
+are open (MIT or Apache-2.0), as is the single-node reference replay cache. Operating
 SESAME at scale (a distributed replay store, multi-tenant key management and
 rotation, audit) is left to separate operational tooling. The traits are the
 line.
@@ -128,5 +128,6 @@ crate still reproduces the committed vectors.
 
 ## License
 
-Code: [Apache-2.0](LICENSE) (extracted from `rust-pois`, originally MIT, ©
-POIS Contributors). Specification text (`SESAME.md`): [`LICENSE-SPEC`](LICENSE-SPEC).
+Code: dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at
+your option (extracted from `rust-pois`, originally MIT, © POIS Contributors).
+Specification text (`SESAME.md`): [`LICENSE-SPEC`](LICENSE-SPEC).
