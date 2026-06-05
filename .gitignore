@@ -2,5 +2,8 @@
 **/*.rs.bk
 .writetest
 
-# Cargo.lock IS committed: this crate ships a binary (sesame-gen-vectors) and
-# pins a reproducible MSRV floor, so the lockfile is tracked deliberately.
+# Cargo.lock IS committed: it pins a reproducible MSRV floor, so the lockfile
+# is tracked deliberately.
+
+# rust-pois integration handoff (lives canonically in /opt/pois)
+handoff-rust-sesame.md
