@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  test:
+    name: build, test, conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy (all features)
+        run: cargo clippy --all-features --all-targets
+
+      - name: Build (default, I/O-free core)
+        run: cargo build
+
+      - name: Unit + conformance tests
+        run: cargo test --features serde
+
+      # The conformance gate: regenerate the vectors and fail if the committed
+      # files drift from what the current implementation produces.
+      - name: Conformance — vectors are up to date
+        run: |
+          cargo run --features cli --bin sesame-gen-vectors -- --out test-vectors
+          git diff --exit-code -- test-vectors/ \
+            || (echo "::error::test-vectors/ is stale — re-run the generator and commit" && exit 1)
+
+  msrv:
+    name: minimum supported Rust (1.74)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.74.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --all-features
