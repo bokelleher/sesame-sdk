@@ -1,5 +1,8 @@
 [package]
-name = "sesame"
+# crates.io package name (the bare `sesame` is taken). The library/import name
+# stays `sesame` via [lib] below, so dependents write
+# `sesame = { package = "sesame-esam", ... }` and `use sesame::...`.
+name = "sesame-esam"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
@@ -12,6 +15,9 @@ keywords = ["scte", "esam", "sesame", "hmac", "authentication"]
 categories = ["cryptography", "authentication"]
 readme = "README.md"
 exclude = ["/.github", "/tools"]
+
+[lib]
+name = "sesame"
 
 [features]
 # Default includes the RNG helpers needed to SIGN (fresh nonce/IV). Verification

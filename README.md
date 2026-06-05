@@ -42,7 +42,14 @@ parity is pinned by golden vectors generated from `rust-pois` and reproduced by
 
 ```toml
 [dependencies]
-sesame = "0.1"
+# The crates.io package is `sesame-esam`; it is imported as `sesame`.
+sesame = { package = "sesame-esam", version = "0.1" }
+```
+
+Not yet published to crates.io. Until the first release, depend by git:
+
+```toml
+sesame = { package = "sesame-esam", git = "https://github.com/bokelleher/sesame-sdk", tag = "v0.1.0" }
 ```
 
 Verify an inbound request (the POIS side):
