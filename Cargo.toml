@@ -3,14 +3,14 @@
 # stays `sesame` via [lib] below, so dependents write
 # `sesame = { package = "sesame-esam", ... }` and `use sesame::...`.
 name = "sesame-esam"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
 description = "SESAME: the proposed SCTE 130-9 security layer for the ESAM interface. HMAC-SHA256 authentication, channel-scoped authorization, and AES-256-GCM payload encryption carried in HTTP headers, with no ESAM XML schema change."
 repository = "https://github.com/bokelleher/sesame-sdk"
 homepage = "https://github.com/bokelleher/sesame-sdk"
-documentation = "https://docs.rs/sesame"
+documentation = "https://docs.rs/sesame-esam"
 keywords = ["scte", "esam", "sesame", "hmac", "authentication"]
 categories = ["cryptography", "authentication"]
 readme = "README.md"
