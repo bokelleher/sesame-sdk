@@ -37,8 +37,8 @@ where
 /// Implementations:
 /// - in-memory single-node: [`crate::store::InMemoryNonceStore`] (feature
 ///   `memory-store`), the open reference;
-/// - distributed (Redis, etc.): lives in the commercial `ba-sesame-ops`, not
-///   here (handoff §6).
+/// - distributed (Redis, etc.): lives in separate commercial operational
+///   tooling, not here.
 ///
 /// `check_and_record` MUST be atomic: a concurrent second presentation of the
 /// same `(nonce, ts)` within `window` must see exactly one success.

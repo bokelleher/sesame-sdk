@@ -153,4 +153,4 @@ when it reproduces every `expected_*` value from the given inputs. See
 - Reconcile §3.1 and §5.1 against deployed `rust-pois` (handoff §3, §10.1).
 - Confirm spec-text license: CC0 vs CC-BY (handoff §10.3).
 - Key rotation and multi-key-per-id semantics are out of scope here; they belong
-  to the operational layer (`ba-sesame-ops`, handoff §6).
+  to a separate operational layer.

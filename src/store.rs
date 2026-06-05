@@ -1,8 +1,9 @@
 //! Reference [`NonceStore`] for a single node (feature `memory-store`).
 //!
-//! This is the OPEN reference impl (handoff §6). It is correct for one process;
-//! it is deliberately *not* the distributed/Redis-backed store, which is the
-//! commercial piece in `ba-sesame-ops`. The trait is the open/commercial line.
+//! This is the OPEN reference impl. It is correct for one process; it is
+//! deliberately *not* the distributed/Redis-backed store, which is part of
+//! separate commercial operational tooling. The trait is the open/commercial
+//! line.
 
 use crate::error::Replay;
 use crate::traits::NonceStore;
