@@ -1,5 +1,9 @@
 # sesame
 
+[![crates.io](https://img.shields.io/crates/v/sesame-esam.svg)](https://crates.io/crates/sesame-esam)
+[![docs.rs](https://img.shields.io/docsrs/sesame-esam)](https://docs.rs/sesame-esam)
+[![license](https://img.shields.io/crates/l/sesame-esam.svg)](#license)
+
 The canonical implementation of **SESAME** (Secure ESAM Authentication and
 Message Encryption), the proposed SCTE 130-9 security layer for the ESAM
 interface. Any ESAM participant (POIS, ADS, encoder, packager, decoder) links
@@ -40,16 +44,16 @@ parity is pinned by golden vectors generated from `rust-pois` and reproduced by
 
 ## Quick start
 
-```toml
-[dependencies]
-# The crates.io package is `sesame-esam`; it is imported as `sesame`.
-sesame = { package = "sesame-esam", version = "0.1" }
+```sh
+cargo add sesame-esam
 ```
 
-Not yet published to crates.io. Until the first release, depend by git:
+The crates.io package is [`sesame-esam`](https://crates.io/crates/sesame-esam);
+it is imported as `sesame`:
 
 ```toml
-sesame = { package = "sesame-esam", git = "https://github.com/bokelleher/sesame-sdk", tag = "v0.1.0" }
+[dependencies]
+sesame = { package = "sesame-esam", version = "0.1" }
 ```
 
 Verify an inbound request (the POIS side):
