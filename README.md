@@ -1,37 +1,42 @@
 # sesame
 
-A portable SDK for **SESAME**: the proposed SCTE 130-9 security layer for the
-ESAM interface. Any ESAM participant (POIS, ADS, encoder, packager, decoder) can
-link this crate and speak SESAME natively, so a signer and a verifier share one
+The canonical implementation of **SESAME** (Secure ESAM Authentication and
+Message Encryption), the proposed SCTE 130-9 security layer for the ESAM
+interface. Any ESAM participant (POIS, ADS, encoder, packager, decoder) links
+this crate and speaks SESAME natively, so a signer and a verifier share one
 byte-identical implementation of the wire rules.
 
-Three additive tiers, all carried in HTTP headers with **no ESAM XML schema
-change**:
+Three additive tiers over a Tier-0 baseline, all carried in HTTP headers with
+**no ESAM XML schema change**:
 
-1. **Authentication & integrity**: HMAC-SHA256 over a canonical signing string.
-2. **Authorization**: channel-scoped, enforced against the resolved key.
-3. **Confidentiality**: AES-256-GCM payload encryption.
+| Tier | Capability | Mechanism |
+|---|---|---|
+| 0 | Unauthenticated baseline | no SESAME headers (backward compatible) |
+| 1 | Authentication + integrity | HMAC-SHA256 over a canonical string |
+| 2 | Channel-scoped authorization | signed `X-SESAME-Scope`, policy lookup |
+| 3 | Payload encryption | AES-256-GCM (96-bit IV, 128-bit tag) |
 
-See [`SESAME.md`](SESAME.md) for the wire format and
-[`test-vectors/`](test-vectors/) for the language-neutral conformance contract.
+See [`SESAME.md`](SESAME.md) for the byte-exact wire format (draft v0.5) and
+[`test-vectors/`](test-vectors/) for the conformance contract.
 
-> **Status: scaffold.** This crate is structured per the project handoff, but the
-> canonical signing string is **provisional** and must be reconciled against the
-> deployed `rust-pois` implementation before it is treated as a published
-> standard. See [`SESAME.md`](SESAME.md) §8.
+## Provenance
 
-## Design contract
+This crate was extracted byte-for-byte from the [`rust-pois`](https://github.com/bokelleher/rust-pois)
+reference implementation, which signs live ESAM traffic in production. It is the
+one home of the protocol; `rust-pois` is intended to depend on it. Byte-level
+parity is pinned by golden vectors generated from `rust-pois` and reproduced by
+`tests/conformance.rs`, so the two cannot silently diverge.
 
-- **Pure, synchronous core.** No I/O, no async runtime, no RNG, no system clock.
-  The caller supplies the timestamp, nonce, and (for tier 3) the IV. The same
-  crate runs server-side, in a packager, and on an embedded decoder, and the
-  conformance vectors are deterministic.
-- **The host owns the resources.** The clock, the replay memory, and the key
-  directory are injected as traits, `Clock`, `NonceStore`, `KeyResolver`. The
-  replay cache is explicitly **not** in the core: a node uses the in-memory
-  reference store, a cluster a distributed one, a device a ring buffer.
-- **One canonicalization.** Signer and verifier agree byte-for-byte, pinned by
-  the JSON test vectors.
+## Design
+
+- **No I/O, no HTTP framework.** `verify_request` / `sign_response` take the
+  request parts, the parsed headers, the body, and `now`.
+- **The host owns the resources** via injected traits: the key directory
+  (`KeyProvider`) and the replay memory (`ReplayCache`). A single-node in-memory
+  replay cache ships; distributed stores are the host's concern.
+- **RNG is feature-gated.** Verification is RNG-free. Signing needs a fresh
+  nonce/IV, so `sign_response` and the IV/nonce helpers sit behind the default-on
+  `rng` feature; build `--no-default-features` for a verify-only or embedded host.
 
 ## Quick start
 
@@ -40,78 +45,81 @@ See [`SESAME.md`](SESAME.md) for the wire format and
 sesame = "0.1"
 ```
 
+Verify an inbound request (the POIS side):
+
 ```rust
-use sesame::{sign, verify_signature, RequestParts, KeyId, ChannelScope, Key, Nonce, UnixTime};
+use sesame::{verify_request, RequestContext, SesameConfig, SesameHeaders, Tier};
+use sesame::keys::{StaticKeyProvider, HmacKey, ChannelScope};
+use sesame::replay::InMemoryReplayCache;
+use time::OffsetDateTime;
 
-let key = Key(b"a-shared-secret".to_vec());
-let parts = RequestParts {
-    method: "POST",
-    target: "/esam/signal",
-    key_id: KeyId("encoder-7".into()),
-    channel: Some(ChannelScope("wxyz-hd".into())),  // tier 2
-};
+let provider = StaticKeyProvider::new().with_signing_key(
+    "sas-east-01",
+    HmacKey(b"shared-secret".to_vec()),
+    ChannelScope::list(["SportsFeed-East"]),
+);
+let replay = InMemoryReplayCache::new(300);
 
-// Signer (encoder / ADS):
-let signed = sign(&parts, &key, &Nonce(vec![0u8; 16]), UnixTime(1_700_000_000), b"<spn/>", None)?;
+// headers parsed from the request (case-insensitive); see axum_adapter for HeaderMap.
+let headers = SesameHeaders::from_lookup(|name| request_header(name));
+let ctx = RequestContext { method: "POST", path: "/esam", target_channel: None };
 
-// Verifier (POIS): the signature is authentic.
-let verified = verify_signature("POST", "/esam/signal", &signed.headers, &signed.body, &key)?;
-assert_eq!(verified.key_id, KeyId("encoder-7".into()));
+let verified = verify_request(
+    &SesameConfig::default(), &provider, &replay,
+    &ctx, &headers, body_bytes, OffsetDateTime::now_utc(), Tier::One,
+)?;
+// verified.plaintext is the ESAM XML; verified.achieved_tier / key_id / scope_channel
+# fn request_header(_: &str) -> Option<String> { None }
+# let body_bytes = b"";
 # Ok::<(), sesame::SesameError>(())
 ```
 
-### Full gate with the host seams
-
-`verify_signature` is just tier 1. The recommended order, authenticate,
-authorize, check freshness, reject replays, is composed by `Verifier`:
+Sign an outbound response (the POIS side, requires the `rng` feature):
 
 ```rust
-use std::time::Duration;
-use sesame::{Verifier, KeyResolver, Clock, KeyId, Key, ChannelScope, UnixTime, InMemoryNonceStore};
-
-struct Keys;
-impl KeyResolver for Keys {
-    fn key_for(&self, id: &KeyId) -> Option<Key> {
-        (id.0 == "encoder-7").then(|| Key(b"a-shared-secret".to_vec()))
-    }
-    fn channel_allowed(&self, _id: &KeyId, ch: Option<&ChannelScope>) -> bool {
-        ch.map_or(true, |c| c.0 == "wxyz-hd")
-    }
-}
-
-let verifier = Verifier::new(Keys, || UnixTime(1_700_000_000), InMemoryNonceStore::new())
-    .with_window(Duration::from_secs(300));
-// verifier.verify(method, target, &headers, &body) -> Verified
+use sesame::{sign_response, ResponseParams, SesameConfig, Tier};
+# use sesame::keys::StaticKeyProvider;
+# let provider = StaticKeyProvider::new();
+let params = ResponseParams {
+    signing_key_id: "pois-primary",
+    correlation: "ap-1:sigid-20260224-001", // the acquisitionSignalID answered
+    scope: None,
+    tier: Tier::One,
+    enc_key_id: None,
+};
+// let resp = sign_response(&SesameConfig::default(), &provider, &params, xml, now)?;
+// attach resp.headers, send resp.body with resp.content_type
 ```
 
 ## Features
 
 | Feature | Default | What it adds |
-|---------|:------:|--------------|
-| `memory-store` | ✅ | Reference single-node `InMemoryNonceStore` (pure std). |
-| `serde` |  | Serde derives on wire types; needed by the conformance harness. |
-| `axum` |  | `HeaderSource` for `http::HeaderMap` + a verify helper for `axum::middleware::from_fn`. |
-| `cli` |  | The `sesame-gen-vectors` binary. |
+|---|:--:|--------------|
+| `rng` | ✅ | CSPRNG helpers: `sign_response`, `tier3_aead::random_iv`. |
+| `serde` |  | Derives on the conformance-vector types (tests/tooling). |
+| `axum` |  | `headers_from_map` over `http::HeaderMap`. |
 
-The **default build is I/O-free**: the pure crypto/protocol core plus the
-in-memory store. HTTP adapters and networked stores are opt-in.
+## Open / commercial line
 
-## Where the open/commercial line sits
-
-The protocol, the pure core, the trait seams, and the single-node reference
-`NonceStore` are **open (Apache-2.0)**. Operating SESAME at scale (a distributed
-replay store, multi-tenant key management and rotation, audit) is left to
-separate operational tooling. The `NonceStore` trait is the line.
+The protocol, the pure core, and the trait seams (`KeyProvider`, `ReplayCache`)
+are open (Apache-2.0), as is the single-node reference replay cache. Operating
+SESAME at scale (a distributed replay store, multi-tenant key management and
+rotation, audit) is left to separate operational tooling. The traits are the
+line.
 
 ## Development
 
 ```sh
-cargo test --features serde          # unit + conformance
-cargo clippy --all-features
-cargo run --features cli --bin sesame-gen-vectors -- --out test-vectors
+cargo test --features serde            # unit + conformance
+cargo clippy --all-features --all-targets
+cargo build --no-default-features      # verify-only / RNG-free
 ```
+
+The golden vectors are regenerated from `rust-pois` via
+[`tools/golden-extractor`](tools/golden-extractor/), not in CI; CI asserts the
+crate still reproduces the committed vectors.
 
 ## License
 
-Code: [Apache-2.0](LICENSE). Specification text (`SESAME.md`):
-[`LICENSE-SPEC`](LICENSE-SPEC) (provisionally CC0-1.0).
+Code: [Apache-2.0](LICENSE) (extracted from `rust-pois`, originally MIT, ©
+POIS Contributors). Specification text (`SESAME.md`): [`LICENSE-SPEC`](LICENSE-SPEC).

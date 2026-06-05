@@ -1,156 +1,150 @@
-# SESAME, Security Extensions for the ESAM interface
+# SESAME Wire Format
 
-> **Status: DRAFT / PROVISIONAL.** This document describes the wire format as
-> implemented by the `sesame` reference crate in this repository. The canonical
-> signing string and the GCM associated-data construction are **not yet
-> reconciled** against the deployed `rust-pois` implementation. Per the handoff
-> (§3), the authoritative extraction MOVES the deployed logic byte-for-byte; if
-> the deployment differs, this document and the conformance vectors change to
-> match it. Do not cite this as a published standard until that reconciliation
-> happens.
->
-> Specification text license: see [`LICENSE-SPEC`](LICENSE-SPEC) (provisionally
-> CC0-1.0). Code license: Apache-2.0.
+This document specifies, byte-for-byte, the SESAME (Secure ESAM Authentication
+and Message Encryption) protocol implemented by the `sesame` crate. It mirrors
+**ANSI/SCTE 130-9 (SESAME) draft v0.5** and matches the deployed `rust-pois`
+reference implementation from which this crate was extracted. The golden vectors
+in [`test-vectors/`](test-vectors/) are the executable form of this document.
 
-## 1. Overview
+SESAME adds nothing to the ESAM XML. Tiers 1 and 2 leave the body untouched;
+Tier 3 replaces the body with ciphertext. No SCTE 130-2/-5/-7/-8 schema changes.
 
-SESAME is the proposed SCTE 130-9 security layer for the ESAM interface. It
-secures the two-party HTTP exchange between an ESAM client (encoder, packager,
-ADS) and an ESAM server (POIS) using **three additive tiers**, all carried in
-**HTTP headers** with **no change to any ESAM XML schema**:
+Earlier drafts left several points underspecified (scope binding, the response
+canonical form, the GCM AAD, IV uniqueness, encrypt-then-MAC ordering). Draft
+v0.5 ratifies all of them with normative `SHALL` language; this document and the
+crate follow v0.5.
 
-| Tier | Property | Mechanism |
-|------|----------|-----------|
-| 1 | Authentication + integrity | HMAC-SHA256 over a canonical signing string |
-| 2 | Authorization | Channel-scoped, enforced against the resolved key |
-| 3 | Confidentiality | AES-256-GCM payload encryption |
+## Tiers
 
-The tiers are additive: a deployment may run tier 1 alone, tiers 1+2, or all
-three. Tier 2 has no standalone existence, it constrains a tier 1 identity.
-Tier 3 is always accompanied by tier 1 (the signature covers the ciphertext).
+| Tier | Capability | Mechanism |
+|---|---|---|
+| 0 | Unauthenticated baseline | no SESAME headers (backward compatible) |
+| 1 | Authentication + integrity | HMAC-SHA256 over a canonical string |
+| 2 | Channel-scoped authorization | signed `X-SESAME-Scope`, policy lookup |
+| 3 | Payload encryption | AES-256-GCM (96-bit IV, 128-bit tag) |
 
-## 2. Headers
+Tiers are additive and independently enableable. A channel's minimum required
+tier is host policy; there is no on-wire tier-advertisement header.
 
-All header names are case-insensitive on receipt; the canonical spellings are:
+## Headers
 
 | Header | Tier | Value |
-|--------|------|-------|
-| `X-Sesame-Version` | 1 | Protocol version. This document defines `1`. |
-| `X-Sesame-Key-Id` | 1 | Opaque key identifier; resolves to a key (and scope). |
-| `X-Sesame-Timestamp` | 1 | Unix time in seconds, decimal ASCII. |
-| `X-Sesame-Nonce` | 1 | Anti-replay nonce, base64. RECOMMENDED ≥ 16 random bytes. |
-| `X-Sesame-Channel` | 2 | Channel scope. Omitted when tier 2 is unused. |
-| `X-Sesame-Signature` | 1 | base64 of the 32-byte HMAC-SHA256. |
-| `X-Sesame-Encryption` | 3 | Suite name. This document defines `AES-256-GCM`. |
-| `X-Sesame-IV` | 3 | base64 of the 12-byte GCM IV. |
-| `X-Sesame-Tag` | 3 | base64 of the 16-byte GCM authentication tag. |
+|---|---|---|
+| `X-SESAME-Version` | 1+ | `1.0` |
+| `X-SESAME-KeyId` | 1+ | signing credential id |
+| `X-SESAME-Timestamp` | 1+ | ISO-8601 UTC, e.g. `2026-02-24T18:00:00Z` |
+| `X-SESAME-Nonce` | 1+ | 128-bit random, lowercase hex (32 chars) |
+| `X-SESAME-Signature` | 1+ | HMAC-SHA256, lowercase hex (64 chars) |
+| `X-SESAME-Scope` | 2+ | `channel=<id>` |
+| `X-SESAME-Encrypted` | 3 | `true` |
+| `X-SESAME-EncKeyId` | 3 | encryption credential id (separate namespace) |
+| `X-SESAME-IV` | 3 | 96-bit GCM IV, lowercase hex (24 chars) |
 
-Encodings are fixed: base64 is the standard alphabet **with** padding (RFC 4648
-§4); hex (where it appears, e.g. the body hash) is **lowercase**.
+Header names are matched case-insensitively. All binary fields (nonce,
+signature, IV) are lowercase hex. Tier 3 sets `Content-Type:
+application/octet-stream`; the original `application/xml` type is not preserved
+on the wire.
 
-## 3. Tier 1, Authentication & integrity
+## Tier 1: canonical signing string
 
-### 3.1 Canonical signing string
-
-The signer and verifier MUST construct the identical signing string, or the
-HMAC will not match and the exchange fails. The string is exactly these nine
-fields, each on its own line, joined by a single LF (`0x0A`), with **no trailing
-newline**:
+The HMAC-SHA256 signature covers this exact string (newline = `\n` = `0x0A`,
+no trailing newline):
 
 ```
-SESAME-HMAC-SHA256
-<version>
-<HTTP method, uppercased>
-<request-target>
-<key-id>
-<timestamp, decimal seconds>
-<nonce, base64>
-<channel scope, or an empty line if tier 2 is unused>
-<lowercase hex SHA-256 of the transmitted body>
+<HTTP-METHOD>\n
+<request-target>\n          ; path + query, exactly as sent, e.g. /esam?channel=SportsFeed-East
+<X-SESAME-Timestamp>\n
+<X-SESAME-Nonce>\n
+<lowercase-hex SHA-256 of the body AS TRANSMITTED>
 ```
 
-- **request-target** is the path plus any query string, exactly as sent (e.g.
-  `/esam/signal?ack=1`).
-- The **transmitted body** is the bytes actually on the wire: under tier 3 this
-  is the ciphertext, so the signature binds the encrypted payload.
-- When tier 2 is not used, the channel field is an **empty line** (the LF is
-  still present; the field is just empty).
+The body hash is over the transmitted body. With Tier 3 active the transmitted
+body is the ciphertext including the appended tag, so the scheme is
+encrypt-then-MAC. There is no version-prefix line and no key-id line.
 
-### 3.2 Signature
+### Tier 2 scope binding
 
-```
-signature = base64( HMAC-SHA256( key, utf8(signing_string) ) )
-```
-
-The verifier recomputes the signing string from the received headers, request
-line, and body, recomputes the HMAC, and compares in **constant time**. The key
-is obtained from `X-Sesame-Key-Id` via the deployment's key directory.
-
-## 4. Tier 2, Authorization
-
-When a request carries `X-Sesame-Channel`, the value is bound into the signing
-string (so it cannot be altered without breaking the signature) and the verifier
-additionally checks that the resolved key is **authorized for that channel**.
-The authorization table (key → permitted channels) is deployment-specific; the
-SDK exposes it as the `KeyResolver::channel_allowed` hook. A tier-1-only
-deployment leaves the channel absent and the check trivially passes.
-
-## 5. Tier 3, Confidentiality
-
-The payload is encrypted with **AES-256-GCM** before signing, so tier 1 protects
-the ciphertext. The 256-bit key is identified by the same `X-Sesame-Key-Id`
-(deployments MAY use distinct keys for MAC vs. encryption behind one id); the
-12-byte IV is unique per (key, message) and travels in `X-Sesame-IV`; the 16-byte
-tag travels in `X-Sesame-Tag`. The ciphertext is the HTTP body.
-
-### 5.1 Associated data
-
-GCM additionally authenticates an associated-data (AAD) string built from fields
-that tier 1 already covers, binding the ciphertext to the request context without
-the circular dependency of feeding the whole signing string (which hashes the
-ciphertext) back into the cipher:
+When `X-SESAME-Scope` is present, its exact value is appended as a sixth line:
 
 ```
-SESAME-AAD
-<key-id>
-<timestamp, decimal seconds>
-<nonce, base64>
-<channel scope, or empty>
+<method>\n<target>\n<timestamp>\n<nonce>\n<body-hash>\n<scope-value>
 ```
 
-(four LF-joined fields, no trailing newline).
+so a request signed for one channel cannot be replayed against another.
 
-### 5.2 Order of operations
+### Signature
 
-**Sender:** encrypt → set IV/Tag/Encryption headers → compute signing string over
-the ciphertext → HMAC. **Receiver:** verify HMAC over the ciphertext → check
-freshness and replay → GCM-decrypt with the same AAD.
+```
+signature = lowercase-hex( HMAC-SHA256( key, canonical-string ) )
+```
 
-## 6. Freshness & replay
+The verifier recomputes the canonical string and compares in constant time. Key
+rotation is supported: during an overlap window a key-id may have multiple valid
+keys, and verification accepts any of them.
 
-Two independent checks, both performed *after* the signature verifies:
+## Tier 1: response signing
 
-1. **Freshness.** Reject if `|now − timestamp|` exceeds the freshness window
-   (default ±300 s). Future-dated requests are rejected symmetrically.
-2. **Replay.** Within the window, a `(nonce)` MUST be accepted at most once. The
-   replay memory is the deployment's responsibility (the SDK injects it as
-   `NonceStore`); entries older than the window MAY be evicted because the
-   freshness check rejects them first.
+A SESAME server signs every response to an authenticated request, with its own
+credential and a freshly generated nonce. Because a response carries no method or
+request-target, the response canonical string is:
 
-The split is deliberate: the freshness rule lives in the portable core, while
-the replay *memory* lives in the host (in-memory for a node, distributed for a
-cluster, a ring buffer for a device).
+```
+RESPONSE\n
+<correlation>\n             ; the acquisitionSignalID being answered
+<X-SESAME-Timestamp>\n
+<X-SESAME-Nonce>\n
+<body-hash>
+[ \n<scope-value> ]         ; present iff Tier 2+
+```
 
-## 7. Conformance
+`correlation` binds the signed response to the specific request signal it
+answers, defeating response substitution. This is the highest-value protection:
+a forged or tampered conditioning decision (spoofed blackout, avail, or redirect)
+fails verification. A client SHALL verify the response signature, timestamp
+freshness, and correlation.
 
-The normative test cases are the language-neutral JSON in
-[`test-vectors/`](test-vectors/). An implementation in any language is conformant
-when it reproduces every `expected_*` value from the given inputs. See
-[`test-vectors/README.md`](test-vectors/README.md).
+## Tier 3: AES-256-GCM
 
-## 8. Open items
+- Body = `AES-256-GCM(key, IV, AAD, plaintext)` = `ciphertext || 128-bit tag`.
+- **IV**: a fresh 96-bit value from a CSPRNG per message, never reused with a
+  key. A request and its response use independent IVs even under the same
+  `EncKeyId`.
+- **AAD**: the SESAME header set, newline-joined, binding the ciphertext to its
+  headers:
+  ```
+  <X-SESAME-Version>\n<X-SESAME-KeyId>\n<X-SESAME-Timestamp>\n<X-SESAME-Nonce>[\n<scope-value>]
+  ```
+- Encryption keys live in a namespace separate from signing keys
+  (`X-SESAME-EncKeyId` vs `X-SESAME-KeyId`) and rotate independently.
 
-- Reconcile §3.1 and §5.1 against deployed `rust-pois` (handoff §3, §10.1).
-- Confirm spec-text license: CC0 vs CC-BY (handoff §10.3).
-- Key rotation and multi-key-per-id semantics are out of scope here; they belong
-  to a separate operational layer.
+## Order of operations (all tiers)
+
+**Send:** serialize XML, Tier 3 encrypt (AAD = headers), Tier 1 SHA-256 over the
+ciphertext, build canonical, HMAC, attach headers, send.
+
+**Receive:** Tier 1 verify (version, freshness, signature), replay check, Tier 2
+authorize, Tier 3 decrypt, parse XML. Fail closed at each step.
+
+## Replay protection
+
+- Reject timestamps outside `±replay_window_secs` (default 300 s).
+- Reject any `(KeyId, Nonce)` already seen within the window.
+- Replay is checked after signature validation, so unauthenticated traffic
+  cannot poison the cache.
+- The reference cache is in-memory and per-process. Horizontally scaled
+  deployments back the `ReplayCache` trait with a shared store.
+
+## Error codes
+
+Distinct fail-closed errors map to wire codes and HTTP status (Appendix A.7):
+`sesame_missing_headers`, `sesame_invalid_version` (400), `sesame_unknown_key`,
+`sesame_expired_timestamp`, `sesame_replay_detected`, `sesame_signature_mismatch`,
+`sesame_scope_denied` (403), `sesame_decrypt_failed` (400), `sesame_key_revoked`.
+All 401 unless noted. A host that wants to avoid the mild key-enumeration signal
+of distinct 401 codes can collapse them to a single opaque 401.
+
+## Key configuration
+
+Key distribution is out of band and is a host responsibility. The crate exposes
+a `KeyProvider` trait (signing keys with rotation, separate AEAD keys, channel
+authorization, revocation) and ships a static, config-backed reference impl.

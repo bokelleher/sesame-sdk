@@ -1,0 +1,87 @@
+{
+  "note": "Golden vectors generated from the rust-pois deployed implementation (src/sesame/, ANSI/SCTE 130-9 SESAME draft v0.5). Authoritative cross-implementation contract: the sesame crate MUST reproduce every expected_* value byte-for-byte. Regenerate with tools/golden-extractor against rust-pois.",
+  "request_vectors": [
+    {
+      "body_hex": "3c5369676e616c50726f63657373696e674e6f74696669636174696f6e206163717569736974696f6e506f696e744964656e746974793d2261702d31222f3e",
+      "body_is_encrypted": false,
+      "body_utf8": "<SignalProcessingNotification acquisitionPointIdentity=\"ap-1\"/>",
+      "expected_canonical": "POST\n/esam\n2026-02-24T18:00:00Z\na1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6\nd64f3b54575e97f16c49e93352343c6aa98924a8dc2ac55797472c83d356868f",
+      "expected_signature_hex": "0f414c6a56f1f1f46e5ffee7173240e926871e86a998ff2b5a617d03a989f1ca",
+      "method": "POST",
+      "name": "tier1 request, no scope",
+      "nonce": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+      "path": "/esam",
+      "scope": null,
+      "signing_key_hex": "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210",
+      "timestamp": "2026-02-24T18:00:00Z"
+    },
+    {
+      "body_hex": "3c5369676e616c50726f63657373696e674e6f74696669636174696f6e206163717569736974696f6e506f696e744964656e746974793d2261702d31222f3e",
+      "body_is_encrypted": false,
+      "body_utf8": "<SignalProcessingNotification acquisitionPointIdentity=\"ap-1\"/>",
+      "expected_canonical": "POST\n/esam?channel=SportsFeed-East\n2026-02-24T18:00:00Z\na1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6\nd64f3b54575e97f16c49e93352343c6aa98924a8dc2ac55797472c83d356868f\nchannel=SportsFeed-East",
+      "expected_signature_hex": "68762486d0301b07f711d9637f34a3994a455ec0f9dd85e21258afb5a8c32641",
+      "method": "POST",
+      "name": "tier2 request, scope in path and signed",
+      "nonce": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+      "path": "/esam?channel=SportsFeed-East",
+      "scope": "channel=SportsFeed-East",
+      "signing_key_hex": "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210",
+      "timestamp": "2026-02-24T18:00:00Z"
+    },
+    {
+      "body_hex": "",
+      "body_is_encrypted": false,
+      "body_utf8": "",
+      "expected_canonical": "POST\n/esam\n2026-02-24T18:00:00Z\na1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expected_signature_hex": "0567c67cc69adc0071e3183828a84cd22b3d5893d167f2a67e8bc20241887fc2",
+      "method": "POST",
+      "name": "tier1 request, empty body",
+      "nonce": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+      "path": "/esam",
+      "scope": null,
+      "signing_key_hex": "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210",
+      "timestamp": "2026-02-24T18:00:00Z"
+    },
+    {
+      "body_hex": "da4b154a2baa6eef100ae4b67409a9b017e23664fbd12b0ffd7a4fe9118b1462a3032e8cc6563a5231cc6ba1670eca9d2275322116a9275c202e266f865fbb78554a58bc0e8c01bd692c5fc2c8c180",
+      "body_is_encrypted": true,
+      "body_utf8": null,
+      "expected_canonical": "POST\n/esam\n2026-02-24T18:00:00Z\na1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6\n71521f53f0f7802550f02f64db948677da4b34d940fd0dc9aa9b84b737e8b65d",
+      "expected_signature_hex": "26747df7028e52a38e1785645b1b51089d81493bc3ebf984dae38faef25ece4d",
+      "method": "POST",
+      "name": "tier3 request, signature over ciphertext||tag (encrypt-then-MAC)",
+      "nonce": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+      "path": "/esam",
+      "scope": null,
+      "signing_key_hex": "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210",
+      "timestamp": "2026-02-24T18:00:00Z"
+    }
+  ],
+  "response_vectors": [
+    {
+      "body_hex": "3c5369676e616c50726f63657373696e674e6f74696669636174696f6e526573706f6e7365206163717569736974696f6e5369676e616c49443d2261702d313a73696769642d32303236303232342d303031222f3e",
+      "body_utf8": "<SignalProcessingNotificationResponse acquisitionSignalID=\"ap-1:sigid-20260224-001\"/>",
+      "correlation": "ap-1:sigid-20260224-001",
+      "expected_canonical": "RESPONSE\nap-1:sigid-20260224-001\n2026-02-24T18:00:00Z\na1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6\nd2c5b05eefee84dd36064cae0b19162190cc145ce507df5344b388de3019f3b0",
+      "expected_signature_hex": "c9fde504d5c2e85a392cca8ec746ab086ba0cc1ec47eb2ed5474d5c806f10fe9",
+      "name": "response, no scope",
+      "nonce": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+      "scope": null,
+      "signing_key_hex": "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210",
+      "timestamp": "2026-02-24T18:00:00Z"
+    },
+    {
+      "body_hex": "3c5369676e616c50726f63657373696e674e6f74696669636174696f6e526573706f6e7365206163717569736974696f6e5369676e616c49443d2261702d313a73696769642d32303236303232342d303031222f3e",
+      "body_utf8": "<SignalProcessingNotificationResponse acquisitionSignalID=\"ap-1:sigid-20260224-001\"/>",
+      "correlation": "ap-1:sigid-20260224-001",
+      "expected_canonical": "RESPONSE\nap-1:sigid-20260224-001\n2026-02-24T18:00:00Z\na1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6\nd2c5b05eefee84dd36064cae0b19162190cc145ce507df5344b388de3019f3b0\nchannel=SportsFeed-East",
+      "expected_signature_hex": "ff32e706a5bc8d59425887bd58a647a96291eca9b8d6b4f4f806df82f83709e5",
+      "name": "response, with scope",
+      "nonce": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+      "scope": "channel=SportsFeed-East",
+      "signing_key_hex": "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210",
+      "timestamp": "2026-02-24T18:00:00Z"
+    }
+  ]
+}

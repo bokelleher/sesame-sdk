@@ -29,19 +29,18 @@ jobs:
       - name: Clippy (all features)
         run: cargo clippy --all-features --all-targets
 
-      - name: Build (default, I/O-free core)
+      - name: Build (default)
         run: cargo build
 
+      - name: Build (no default features, verify-only / RNG-free)
+        run: cargo build --no-default-features
+
+      # The conformance gate: the unit tests plus tests/conformance.rs assert
+      # that this crate reproduces the golden vectors (generated from rust-pois,
+      # committed under test-vectors/) byte-for-byte. The vectors are NOT
+      # regenerated here: they are the fixed cross-implementation contract.
       - name: Unit + conformance tests
         run: cargo test --features serde
-
-      # The conformance gate: regenerate the vectors and fail if the committed
-      # files drift from what the current implementation produces.
-      - name: Conformance — vectors are up to date
-        run: |
-          cargo run --features cli --bin sesame-gen-vectors -- --out test-vectors
-          git diff --exit-code -- test-vectors/ \
-            || (echo "::error::test-vectors/ is stale — re-run the generator and commit" && exit 1)
 
   msrv:
     name: minimum supported Rust (1.85)

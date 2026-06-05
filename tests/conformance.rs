@@ -1,146 +1,136 @@
-//! Conformance gate: the committed `test-vectors/*.json` MUST be reproduced
-//! byte-for-byte by the current implementation.
-//!
-//! This is the in-repo guard against drift. A cross-language implementer uses
-//! the same JSON the other direction (read inputs → assert they reproduce
-//! `expected_*`). If anyone changes the canonical signing string or the GCM
-//! binding without regenerating the vectors, this test fails, which is the
-//! point: the published contract may only change deliberately.
+//! Conformance gate: the golden vectors in `test-vectors/` (generated from the
+//! deployed `rust-pois` implementation) MUST be reproduced byte-for-byte by this
+//! crate. This is the proof that the SDK is a faithful extraction of the
+//! deployed wire format, not a parallel reimplementation that has drifted.
 //!
 //! Requires the `serde` feature (for the vector types). Run:
 //!   cargo test --features serde --test conformance
 
 #![cfg(feature = "serde")]
 
-use sesame::canonical::Canonical;
-use sesame::cipher;
-use sesame::encoding::{b64_encode, hex_decode, hex_encode};
-use sesame::types::{ChannelScope, Key, KeyId, Nonce, RequestParts, UnixTime};
-use sesame::vectors::{GcmVectorFile, SigningVectorFile};
+use sesame::canonical::{body_hash_hex, request_canonical, response_canonical};
+use sesame::message::{hex_decode, hex_encode};
+use sesame::tier1_hmac::sign;
+use sesame::tier3_aead::{aad_for_headers, open, seal, IV_LEN, KEY_LEN};
+use sesame::vectors::{Tier1File, Tier3File};
 
 fn read(path: &str) -> String {
     let full = format!("{}/test-vectors/{}", env!("CARGO_MANIFEST_DIR"), path);
     std::fs::read_to_string(&full).unwrap_or_else(|e| panic!("read {full}: {e}"))
 }
 
+fn key32(hex: &str) -> [u8; KEY_LEN] {
+    let v = hex_decode(hex).expect("enc key hex");
+    let mut k = [0u8; KEY_LEN];
+    assert_eq!(v.len(), KEY_LEN, "enc key must be 32 bytes");
+    k.copy_from_slice(&v);
+    k
+}
+
+fn iv12(hex: &str) -> [u8; IV_LEN] {
+    let v = hex_decode(hex).expect("iv hex");
+    let mut iv = [0u8; IV_LEN];
+    assert_eq!(v.len(), IV_LEN, "iv must be 12 bytes");
+    iv.copy_from_slice(&v);
+    iv
+}
+
 #[test]
-fn signing_vectors_reproduce() {
-    let file: SigningVectorFile =
-        serde_json::from_str(&read("signing.json")).expect("parse signing.json");
-    assert!(!file.vectors.is_empty(), "no signing vectors committed");
+fn tier1_request_vectors_reproduce() {
+    let file: Tier1File = serde_json::from_str(&read("tier1.json")).expect("parse tier1.json");
+    assert!(!file.request_vectors.is_empty(), "no request vectors");
 
-    for v in &file.vectors {
-        let key = Key(hex_decode(&v.key_hex).expect("key hex"));
-        let nonce = Nonce(hex_decode(&v.nonce_hex).expect("nonce hex"));
-        let key_id = KeyId(v.key_id.clone());
-        let channel = v.channel.clone().map(ChannelScope);
-
-        // 1. canonical signing string reproduces exactly
-        let signing_string = Canonical {
-            version: &v.version,
-            method: &v.method,
-            target: &v.target,
-            key_id: &key_id,
-            timestamp: UnixTime(v.timestamp),
-            nonce: &nonce,
-            channel: channel.as_ref(),
-            body: v.body_utf8.as_bytes(),
-        }
-        .to_signing_string();
+    for v in &file.request_vectors {
+        let body = hex_decode(&v.body_hex).expect("body hex");
+        let bh = body_hash_hex(&body);
+        let canonical = request_canonical(
+            &v.method,
+            &v.path,
+            &v.timestamp,
+            &v.nonce,
+            &bh,
+            v.scope.as_deref(),
+        );
         assert_eq!(
-            signing_string, v.expected_signing_string,
-            "signing string mismatch for {:?}",
-            v.description
+            canonical, v.expected_canonical,
+            "request canonical mismatch for {:?}",
+            v.name
         );
 
-        // 2. HMAC reproduces, via the public sign() path
-        let parts = RequestParts {
-            method: &v.method,
-            target: &v.target,
-            key_id: key_id.clone(),
-            channel: channel.clone(),
-        };
-        let signed = sesame::sign(
-            &parts,
-            &key,
-            &nonce,
-            UnixTime(v.timestamp),
-            v.body_utf8.as_bytes(),
-            None,
-        )
-        .expect("sign");
+        let key = hex_decode(&v.signing_key_hex).expect("key hex");
+        let signature = sign(&key, &canonical);
         assert_eq!(
-            signed.header(sesame::header::SIGNATURE).unwrap(),
-            v.expected_signature_b64,
-            "signature mismatch for {:?}",
-            v.description
+            signature, v.expected_signature_hex,
+            "request signature mismatch for {:?}",
+            v.name
         );
-
-        // 3. the signed message verifies
-        let verified =
-            sesame::verify_signature(&v.method, &v.target, &signed.headers, &signed.body, &key)
-                .expect("verify");
-        assert_eq!(verified.key_id, key_id);
-        assert_eq!(verified.channel, channel);
     }
 }
 
 #[test]
-fn gcm_vectors_reproduce() {
-    let file: GcmVectorFile = serde_json::from_str(&read("gcm.json")).expect("parse gcm.json");
-    assert!(!file.vectors.is_empty(), "no gcm vectors committed");
+fn tier1_response_vectors_reproduce() {
+    let file: Tier1File = serde_json::from_str(&read("tier1.json")).expect("parse tier1.json");
+    assert!(!file.response_vectors.is_empty(), "no response vectors");
 
-    for v in &file.vectors {
-        let key = hex_decode(&v.key_hex).expect("key hex");
-        let iv_vec = hex_decode(&v.iv_hex).expect("iv hex");
-        let iv: [u8; 12] = iv_vec.try_into().expect("iv is 12 bytes");
-        let key_id = KeyId(v.key_id.clone());
-        let nonce = Nonce(hex_decode(&v.nonce_hex).expect("nonce hex"));
-        let channel = v.channel.clone().map(ChannelScope);
-
-        let aad = cipher::associated_data(&key_id, UnixTime(v.timestamp), &nonce, channel.as_ref());
+    for v in &file.response_vectors {
+        let body = hex_decode(&v.body_hex).expect("body hex");
+        let bh = body_hash_hex(&body);
+        let canonical = response_canonical(
+            &v.correlation,
+            &v.timestamp,
+            &v.nonce,
+            &bh,
+            v.scope.as_deref(),
+        );
         assert_eq!(
-            String::from_utf8(aad).unwrap(),
-            v.aad_utf8,
+            canonical, v.expected_canonical,
+            "response canonical mismatch for {:?}",
+            v.name
+        );
+
+        let key = hex_decode(&v.signing_key_hex).expect("key hex");
+        let signature = sign(&key, &canonical);
+        assert_eq!(
+            signature, v.expected_signature_hex,
+            "response signature mismatch for {:?}",
+            v.name
+        );
+    }
+}
+
+#[test]
+fn tier3_aead_vectors_reproduce() {
+    let file: Tier3File = serde_json::from_str(&read("tier3.json")).expect("parse tier3.json");
+    assert!(!file.aead_vectors.is_empty(), "no aead vectors");
+
+    for v in &file.aead_vectors {
+        let aad = aad_for_headers(
+            &v.version,
+            &v.key_id,
+            &v.timestamp,
+            &v.nonce,
+            v.scope.as_deref(),
+        );
+        assert_eq!(
+            String::from_utf8(aad.clone()).unwrap(),
+            v.expected_aad_utf8,
             "aad mismatch for {:?}",
-            v.description
+            v.name
         );
 
-        let (ciphertext, tag) = cipher::encrypt(
-            &key,
-            &iv,
-            &key_id,
-            UnixTime(v.timestamp),
-            &nonce,
-            channel.as_ref(),
-            v.plaintext_utf8.as_bytes(),
-        )
-        .expect("encrypt");
+        let key = key32(&v.enc_key_hex);
+        let iv = iv12(&v.iv_hex);
+        let plaintext = hex_decode(&v.plaintext_hex).expect("plaintext hex");
+        let body = seal(&key, &iv, &aad, &plaintext).expect("seal");
         assert_eq!(
-            hex_encode(&ciphertext),
-            v.expected_ciphertext_hex,
-            "ciphertext mismatch for {:?}",
-            v.description
-        );
-        assert_eq!(
-            b64_encode(&tag),
-            v.expected_tag_b64,
-            "tag mismatch for {:?}",
-            v.description
+            hex_encode(&body),
+            v.expected_body_hex,
+            "ciphertext||tag mismatch for {:?}",
+            v.name
         );
 
-        // round-trip back to plaintext
-        let pt = cipher::decrypt(
-            &key,
-            &iv,
-            &tag,
-            &key_id,
-            UnixTime(v.timestamp),
-            &nonce,
-            channel.as_ref(),
-            &ciphertext,
-        )
-        .expect("decrypt");
-        assert_eq!(pt, v.plaintext_utf8.as_bytes());
+        // round-trips back to plaintext
+        let recovered = open(&key, &iv, &aad, &body).expect("open");
+        assert_eq!(recovered, plaintext, "decrypt round-trip for {:?}", v.name);
     }
 }

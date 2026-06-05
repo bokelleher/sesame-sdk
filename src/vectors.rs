@@ -1,66 +1,69 @@
-//! Serde shapes for the language-neutral conformance vectors (feature `serde`).
+//! Deserialization shapes for the golden conformance vectors (feature `serde`).
 //!
-//! These structs ARE the cross-language contract: a Go/Python/C++ implementer
-//! reads `test-vectors/*.json`, reconstructs the inputs from the hex/utf-8
-//! fields, and asserts they reproduce `expected_*`. Nothing here is
-//! Rust-specific, the fields are plain scalars and hex/base64 strings.
+//! The JSON in `test-vectors/` is generated from the deployed `rust-pois`
+//! implementation (see `tools/golden-extractor`). It is the authoritative
+//! cross-implementation contract: `tests/conformance.rs` reconstructs each
+//! input and asserts this crate reproduces every `expected_*` value
+//! byte-for-byte. Nothing here is Rust-specific; the fields are scalars and
+//! hex/utf-8 strings any implementation can consume.
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-/// A tier 1 (canonical signing string + HMAC) conformance case.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SigningVector {
-    pub description: String,
-    pub version: String,
+#[derive(Debug, Clone, Deserialize)]
+pub struct Tier1File {
+    pub note: String,
+    pub request_vectors: Vec<RequestVector>,
+    pub response_vectors: Vec<ResponseVector>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct RequestVector {
+    pub name: String,
     pub method: String,
-    pub target: String,
-    pub key_id: String,
-    /// HMAC key, hex-encoded.
-    pub key_hex: String,
-    pub timestamp: u64,
-    /// Anti-replay nonce, hex-encoded.
-    pub nonce_hex: String,
-    /// Tier 2 channel scope, or `null` when absent.
-    pub channel: Option<String>,
-    /// Request body as UTF-8 (these vectors use text bodies for readability).
-    pub body_utf8: String,
-    /// The exact canonical signing string (LF-separated, no trailing newline).
-    pub expected_signing_string: String,
-    /// base64(HMAC-SHA256(key, signing_string)).
-    pub expected_signature_b64: String,
+    pub path: String,
+    pub timestamp: String,
+    pub nonce: String,
+    pub scope: Option<String>,
+    pub signing_key_hex: String,
+    pub body_hex: String,
+    pub body_utf8: Option<String>,
+    pub body_is_encrypted: bool,
+    pub expected_canonical: String,
+    pub expected_signature_hex: String,
 }
 
-/// A tier 3 (AES-256-GCM) conformance case.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GcmVector {
-    pub description: String,
-    /// 32-byte AES-256 key, hex-encoded.
-    pub key_hex: String,
-    /// 12-byte GCM IV, hex-encoded.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ResponseVector {
+    pub name: String,
+    pub correlation: String,
+    pub timestamp: String,
+    pub nonce: String,
+    pub scope: Option<String>,
+    pub signing_key_hex: String,
+    pub body_hex: String,
+    pub body_utf8: Option<String>,
+    pub expected_canonical: String,
+    pub expected_signature_hex: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Tier3File {
+    pub note: String,
+    pub aead_vectors: Vec<AeadVector>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AeadVector {
+    pub name: String,
+    pub enc_key_hex: String,
     pub iv_hex: String,
+    pub version: String,
     pub key_id: String,
-    pub timestamp: u64,
-    pub nonce_hex: String,
-    pub channel: Option<String>,
-    pub plaintext_utf8: String,
-    /// The associated data bound by GCM, as UTF-8 (derivable, included for
-    /// cross-impl debugging).
-    pub aad_utf8: String,
-    /// Ciphertext (tag stripped), hex-encoded.
-    pub expected_ciphertext_hex: String,
-    /// base64 of the 16-byte GCM tag.
-    pub expected_tag_b64: String,
-}
-
-/// Top-level shape of each committed vector file.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SigningVectorFile {
-    pub note: String,
-    pub vectors: Vec<SigningVector>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GcmVectorFile {
-    pub note: String,
-    pub vectors: Vec<GcmVector>,
+    pub timestamp: String,
+    pub nonce: String,
+    pub scope: Option<String>,
+    pub plaintext_hex: String,
+    pub plaintext_utf8: Option<String>,
+    pub expected_aad_utf8: String,
+    pub expected_body_hex: String,
 }
