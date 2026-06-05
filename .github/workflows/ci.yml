@@ -44,10 +44,13 @@ jobs:
             || (echo "::error::test-vectors/ is stale — re-run the generator and commit" && exit 1)
 
   msrv:
-    name: minimum supported Rust (1.74)
+    name: minimum supported Rust (1.85)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.74.0
+      - uses: dtolnay/rust-toolchain@1.85.0
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build --all-features
+      # --locked: build the exact committed dependency versions, so the MSRV
+      # floor is reproducible and a dependency floating its own MSRV upward
+      # cannot silently break this job.
+      - run: cargo build --all-features --locked

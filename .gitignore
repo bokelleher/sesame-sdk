@@ -1,4 +1,6 @@
 /target
-Cargo.lock
 **/*.rs.bk
 .writetest
+
+# Cargo.lock IS committed: this crate ships a binary (sesame-gen-vectors) and
+# pins a reproducible MSRV floor, so the lockfile is tracked deliberately.
