@@ -1,4 +1,4 @@
-//! Tier 1 — HMAC-SHA256 authentication and integrity — plus the freshness rule.
+//! Tier 1, HMAC-SHA256 authentication and integrity, plus the freshness rule.
 //!
 //! [`sign`] and [`verify_signature`] are pure and synchronous: no clock, no
 //! RNG, no I/O. The caller supplies the timestamp and nonce (and, for tier 3,
@@ -100,7 +100,7 @@ pub fn sign(
 /// Verify the tier 1 signature (and parse tier 2/3 metadata) for a received
 /// request. On success the returned [`Verified`] facts are authentic.
 ///
-/// This does **not** check freshness or replay — call [`check_freshness`] and
+/// This does **not** check freshness or replay, call [`check_freshness`] and
 /// the host's [`NonceStore`](crate::traits::NonceStore) next. `method` and
 /// `target` are the request line, supplied by the host (they are not SESAME
 /// headers but they are bound by the signature).

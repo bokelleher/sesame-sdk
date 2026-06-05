@@ -1,4 +1,4 @@
-//! Tier 3 — AES-256-GCM payload encryption.
+//! Tier 3, AES-256-GCM payload encryption.
 //!
 //! The body is encrypted before it is signed, so the tier 1 signature covers
 //! the ciphertext (see [`crate::canonical`]). GCM's own authentication tag
@@ -80,7 +80,7 @@ pub fn encrypt(
 
 /// Decrypt `ciphertext` (tag separate), returning the plaintext.
 ///
-/// Returns [`SesameError::Decryption`] on any authentication failure — wrong
+/// Returns [`SesameError::Decryption`] on any authentication failure, wrong
 /// key, tampered ciphertext, mismatched AAD, or wrong tag. The error carries no
 /// detail by design.
 #[allow(clippy::too_many_arguments)]

@@ -13,7 +13,7 @@
 //! 4. check freshness against the clock,
 //! 5. check-and-record the nonce for replay.
 //!
-//! It is still synchronous and I/O-free in itself — any I/O lives inside the
+//! It is still synchronous and I/O-free in itself, any I/O lives inside the
 //! injected traits.
 
 use crate::auth::{check_freshness, decrypt_body, verify_signature};

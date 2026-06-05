@@ -45,7 +45,7 @@ impl UnixTime {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct KeyId(pub String);
 
-/// Tier 2 authorization scope — the channel the request is acting on.
+/// Tier 2 authorization scope, the channel the request is acting on.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ChannelScope(pub String);
 
@@ -91,7 +91,7 @@ impl fmt::Debug for Key {
 ///
 /// `method` and `target` (request-target: path plus optional `?query`) are
 /// included so a captured signature cannot be replayed against a different
-/// endpoint. `body` is the bytes as transmitted — i.e. ciphertext when tier 3
+/// endpoint. `body` is the bytes as transmitted, i.e. ciphertext when tier 3
 /// is in use.
 #[derive(Clone, Debug)]
 pub struct RequestParts<'a> {
@@ -143,7 +143,7 @@ impl Signed {
 
 /// The trustworthy facts established by [`verify_signature`](crate::verify_signature):
 /// the signature matched, so these header values are authentic. Freshness and
-/// replay are *not* yet checked — that is the host's next step (see crate docs).
+/// replay are *not* yet checked, that is the host's next step (see crate docs).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Verified {
     pub key_id: KeyId,

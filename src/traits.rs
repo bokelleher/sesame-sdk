@@ -8,7 +8,7 @@
 //! All three are synchronous on purpose: the core never imports an async
 //! runtime, so it drops into an embedded decoder as cleanly as into an Axum
 //! service. A host whose store is genuinely async (e.g. Redis) does the await
-//! in its own code and calls [`NonceStore::check_and_record`] from there — the
+//! in its own code and calls [`NonceStore::check_and_record`] from there, the
 //! freshness check is a host-invoked step, not something the core drives.
 
 use crate::error::Replay;
@@ -45,7 +45,7 @@ where
 pub trait NonceStore {
     /// Record `nonce` as seen at `ts`, or reject it as a [`Replay`] if it was
     /// already recorded within `window`. Entries older than `window` MAY be
-    /// evicted — they can never cause a false replay because the freshness
+    /// evicted, they can never cause a false replay because the freshness
     /// check rejects them first.
     fn check_and_record(&self, nonce: &Nonce, ts: UnixTime, window: Duration)
         -> Result<(), Replay>;

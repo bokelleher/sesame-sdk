@@ -25,7 +25,7 @@ struct Args {
 }
 
 const PROVISIONAL_NOTE: &str =
-    "PROVISIONAL — generated from the sesame reference impl; the canonical \
+    "PROVISIONAL, generated from the sesame reference impl; the canonical \
      signing-string layout must be reconciled against deployed rust-pois before \
      this is treated as a published standard (handoff §3).";
 

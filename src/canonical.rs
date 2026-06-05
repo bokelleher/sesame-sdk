@@ -1,4 +1,4 @@
-//! The canonical signing string — the one byte-exact artifact that signer and
+//! The canonical signing string, the one byte-exact artifact that signer and
 //! verifier MUST agree on, or they do not interoperate at all (handoff §2).
 //!
 //! ## Format (v1, PROVISIONAL)
@@ -23,7 +23,7 @@
 //! Under tier 3 the "transmitted body" is the ciphertext, so the body hash
 //! binds the signature to the encrypted bytes actually on the wire.
 //!
-//! > **PROVISIONAL — reconcile before first interop.** This layout is the
+//! > **PROVISIONAL, reconcile before first interop.** This layout is the
 //! > scaffold's proposal, *not* yet confirmed against the deployed rust-pois
 //! > implementation. Per handoff §3 the real extraction MOVES the deployed
 //! > canonicalization byte-for-byte; if it differs (field order, separators,

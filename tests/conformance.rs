@@ -4,7 +4,7 @@
 //! This is the in-repo guard against drift. A cross-language implementer uses
 //! the same JSON the other direction (read inputs → assert they reproduce
 //! `expected_*`). If anyone changes the canonical signing string or the GCM
-//! binding without regenerating the vectors, this test fails — which is the
+//! binding without regenerating the vectors, this test fails, which is the
 //! point: the published contract may only change deliberately.
 //!
 //! Requires the `serde` feature (for the vector types). Run:

@@ -1,14 +1,14 @@
 //! # SESAME
 //!
-//! A portable SDK for **SESAME** — the proposed SCTE 130-9 security layer for
+//! A portable SDK for **SESAME**: the proposed SCTE 130-9 security layer for
 //! the ESAM interface. Three additive tiers, all carried in HTTP headers with
 //! **no ESAM XML schema change**:
 //!
-//! 1. **Tier 1 — authentication & integrity:** HMAC-SHA256 over a canonical
+//! 1. **Tier 1, authentication & integrity:** HMAC-SHA256 over a canonical
 //!    signing string ([`auth::sign`] / [`auth::verify_signature`]).
-//! 2. **Tier 2 — authorization:** channel-scoped, enforced by the host's
+//! 2. **Tier 2, authorization:** channel-scoped, enforced by the host's
 //!    [`KeyResolver`](traits::KeyResolver).
-//! 3. **Tier 3 — confidentiality:** AES-256-GCM payload encryption
+//! 3. **Tier 3, confidentiality:** AES-256-GCM payload encryption
 //!    ([`cipher`]).
 //!
 //! ## Design contract
@@ -16,7 +16,7 @@
 //! - **Pure and synchronous core.** No I/O, no async runtime, no RNG, no system
 //!   clock. Caller supplies the timestamp, nonce, and (for tier 3) IV. This is
 //!   what makes the same crate run server-side, in a packager, and on an
-//!   embedded decoder — and what makes the conformance vectors deterministic.
+//!   embedded decoder, and what makes the conformance vectors deterministic.
 //! - **Host owns the resources.** The clock, the replay memory, and the key
 //!   directory are injected as the [`Clock`](traits::Clock),
 //!   [`NonceStore`](traits::NonceStore), and [`KeyResolver`](traits::KeyResolver)
@@ -30,11 +30,11 @@
 //! The primitives are separate on purpose; a constrained host can use only what
 //! it needs. The recommended order, which [`Verifier`] performs for you:
 //!
-//! 1. [`verify_signature`] — authenticate (tier 1) and parse tier 2/3 metadata.
+//! 1. [`verify_signature`], authenticate (tier 1) and parse tier 2/3 metadata.
 //! 2. channel authorization (tier 2) via [`KeyResolver::channel_allowed`].
-//! 3. [`check_freshness`] — reject stale/future-dated requests.
-//! 4. [`NonceStore::check_and_record`] — reject replays.
-//! 5. [`auth::decrypt_body`] — recover the plaintext (tier 3 only).
+//! 3. [`check_freshness`], reject stale/future-dated requests.
+//! 4. [`NonceStore::check_and_record`], reject replays.
+//! 5. [`auth::decrypt_body`], recover the plaintext (tier 3 only).
 //!
 //! ```
 //! use sesame::{sign, verify_signature, RequestParts, KeyId, ChannelScope, Key, Nonce, UnixTime};

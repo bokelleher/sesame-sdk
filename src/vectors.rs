@@ -3,7 +3,7 @@
 //! These structs ARE the cross-language contract: a Go/Python/C++ implementer
 //! reads `test-vectors/*.json`, reconstructs the inputs from the hex/utf-8
 //! fields, and asserts they reproduce `expected_*`. Nothing here is
-//! Rust-specific — the fields are plain scalars and hex/base64 strings.
+//! Rust-specific, the fields are plain scalars and hex/base64 strings.
 
 use serde::{Deserialize, Serialize};
 

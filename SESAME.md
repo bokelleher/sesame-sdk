@@ -1,4 +1,4 @@
-# SESAME — Security Extensions for the ESAM interface
+# SESAME, Security Extensions for the ESAM interface
 
 > **Status: DRAFT / PROVISIONAL.** This document describes the wire format as
 > implemented by the `sesame` reference crate in this repository. The canonical
@@ -26,7 +26,7 @@ ADS) and an ESAM server (POIS) using **three additive tiers**, all carried in
 | 3 | Confidentiality | AES-256-GCM payload encryption |
 
 The tiers are additive: a deployment may run tier 1 alone, tiers 1+2, or all
-three. Tier 2 has no standalone existence — it constrains a tier 1 identity.
+three. Tier 2 has no standalone existence, it constrains a tier 1 identity.
 Tier 3 is always accompanied by tier 1 (the signature covers the ciphertext).
 
 ## 2. Headers
@@ -48,7 +48,7 @@ All header names are case-insensitive on receipt; the canonical spellings are:
 Encodings are fixed: base64 is the standard alphabet **with** padding (RFC 4648
 §4); hex (where it appears, e.g. the body hash) is **lowercase**.
 
-## 3. Tier 1 — Authentication & integrity
+## 3. Tier 1, Authentication & integrity
 
 ### 3.1 Canonical signing string
 
@@ -86,7 +86,7 @@ The verifier recomputes the signing string from the received headers, request
 line, and body, recomputes the HMAC, and compares in **constant time**. The key
 is obtained from `X-Sesame-Key-Id` via the deployment's key directory.
 
-## 4. Tier 2 — Authorization
+## 4. Tier 2, Authorization
 
 When a request carries `X-Sesame-Channel`, the value is bound into the signing
 string (so it cannot be altered without breaking the signature) and the verifier
@@ -95,7 +95,7 @@ The authorization table (key → permitted channels) is deployment-specific; the
 SDK exposes it as the `KeyResolver::channel_allowed` hook. A tier-1-only
 deployment leaves the channel absent and the check trivially passes.
 
-## 5. Tier 3 — Confidentiality
+## 5. Tier 3, Confidentiality
 
 The payload is encrypted with **AES-256-GCM** before signing, so tier 1 protects
 the ciphertext. The 256-bit key is identified by the same `X-Sesame-Key-Id`

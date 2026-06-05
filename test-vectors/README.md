@@ -13,8 +13,8 @@ reading any Rust.
 
 ## Files
 
-- `signing.json` — tier 1: canonical signing string + HMAC-SHA256.
-- `gcm.json` — tier 3: AES-256-GCM ciphertext + tag, with the bound AAD.
+- `signing.json`, tier 1: canonical signing string + HMAC-SHA256.
+- `gcm.json`, tier 3: AES-256-GCM ciphertext + tag, with the bound AAD.
 
 ## How to use them (any language)
 
@@ -52,5 +52,5 @@ cargo test  --features serde --test conformance
 ```
 
 If you change the canonical string or the GCM binding, the conformance test
-fails until you regenerate — by design, so the published contract only ever
+fails until you regenerate, by design, so the published contract only ever
 changes deliberately.

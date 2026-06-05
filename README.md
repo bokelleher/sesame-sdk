@@ -1,6 +1,6 @@
 # sesame
 
-A portable SDK for **SESAME** — the proposed SCTE 130-9 security layer for the
+A portable SDK for **SESAME**: the proposed SCTE 130-9 security layer for the
 ESAM interface. Any ESAM participant (POIS, ADS, encoder, packager, decoder) can
 link this crate and speak SESAME natively, so a signer and a verifier share one
 byte-identical implementation of the wire rules.
@@ -8,9 +8,9 @@ byte-identical implementation of the wire rules.
 Three additive tiers, all carried in HTTP headers with **no ESAM XML schema
 change**:
 
-1. **Authentication & integrity** — HMAC-SHA256 over a canonical signing string.
-2. **Authorization** — channel-scoped, enforced against the resolved key.
-3. **Confidentiality** — AES-256-GCM payload encryption.
+1. **Authentication & integrity**: HMAC-SHA256 over a canonical signing string.
+2. **Authorization**: channel-scoped, enforced against the resolved key.
+3. **Confidentiality**: AES-256-GCM payload encryption.
 
 See [`SESAME.md`](SESAME.md) for the wire format and
 [`test-vectors/`](test-vectors/) for the language-neutral conformance contract.
@@ -24,10 +24,10 @@ See [`SESAME.md`](SESAME.md) for the wire format and
 
 - **Pure, synchronous core.** No I/O, no async runtime, no RNG, no system clock.
   The caller supplies the timestamp, nonce, and (for tier 3) the IV. The same
-  crate runs server-side, in a packager, and on an embedded decoder — and the
+  crate runs server-side, in a packager, and on an embedded decoder, and the
   conformance vectors are deterministic.
 - **The host owns the resources.** The clock, the replay memory, and the key
-  directory are injected as traits — `Clock`, `NonceStore`, `KeyResolver`. The
+  directory are injected as traits, `Clock`, `NonceStore`, `KeyResolver`. The
   replay cache is explicitly **not** in the core: a node uses the in-memory
   reference store, a cluster a distributed one, a device a ring buffer.
 - **One canonicalization.** Signer and verifier agree byte-for-byte, pinned by
@@ -62,8 +62,8 @@ assert_eq!(verified.key_id, KeyId("encoder-7".into()));
 
 ### Full gate with the host seams
 
-`verify_signature` is just tier 1. The recommended order — authenticate,
-authorize, check freshness, reject replays — is composed by `Verifier`:
+`verify_signature` is just tier 1. The recommended order, authenticate,
+authorize, check freshness, reject replays, is composed by `Verifier`:
 
 ```rust
 use std::time::Duration;
@@ -93,14 +93,14 @@ let verifier = Verifier::new(Keys, || UnixTime(1_700_000_000), InMemoryNonceStor
 | `axum` |  | `HeaderSource` for `http::HeaderMap` + a verify helper for `axum::middleware::from_fn`. |
 | `cli` |  | The `sesame-gen-vectors` binary. |
 
-The **default build is I/O-free** — the pure crypto/protocol core plus the
+The **default build is I/O-free**: the pure crypto/protocol core plus the
 in-memory store. HTTP adapters and networked stores are opt-in.
 
 ## Where the open/commercial line sits
 
 The protocol, the pure core, the trait seams, and the single-node reference
-`NonceStore` are **open (Apache-2.0)**. Operating SESAME at scale — a distributed
-replay store, multi-tenant key management and rotation, audit — is the commercial
+`NonceStore` are **open (Apache-2.0)**. Operating SESAME at scale, a distributed
+replay store, multi-tenant key management and rotation, audit, is the commercial
 counterpart (`ba-sesame-ops`). The `NonceStore` trait is the line.
 
 ## Development

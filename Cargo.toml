@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.74"
 license = "Apache-2.0"
-description = "SESAME — the proposed SCTE 130-9 security layer for the ESAM interface: HMAC-SHA256 authentication, channel-scoped authorization, and AES-256-GCM payload encryption carried in HTTP headers, with no ESAM XML schema change."
-repository = "https://github.com/REPLACE-ME/sesame"
+description = "SESAME: the proposed SCTE 130-9 security layer for the ESAM interface. HMAC-SHA256 authentication, channel-scoped authorization, and AES-256-GCM payload encryption carried in HTTP headers, with no ESAM XML schema change."
+repository = "https://github.com/bokelleher/sesame-sdk"
+homepage = "https://github.com/bokelleher/sesame-sdk"
+documentation = "https://docs.rs/sesame"
 keywords = ["scte", "esam", "sesame", "hmac", "authentication"]
 categories = ["cryptography", "authentication"]
 readme = "README.md"
@@ -33,7 +35,7 @@ axum = ["dep:http"]
 cli = ["serde", "dep:serde_json", "dep:clap"]
 
 [dependencies]
-# Pure crypto core — RustCrypto, no I/O, no async runtime.
+# Pure crypto core, RustCrypto, no I/O, no async runtime.
 hmac = "0.12"
 sha2 = "0.10"
 aes-gcm = "0.10"
