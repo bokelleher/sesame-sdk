@@ -1,5 +1,5 @@
 {
-  "note": "PROVISIONAL — generated from the sesame reference impl; the canonical signing-string layout must be reconciled against deployed rust-pois before this is treated as a published standard (handoff §3).",
+  "note": "PROVISIONAL, generated from the sesame reference impl; the canonical signing-string layout must be reconciled against deployed rust-pois before this is treated as a published standard (handoff §3).",
   "vectors": [
     {
       "description": "tier3, no channel",

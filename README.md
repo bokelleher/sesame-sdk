@@ -99,9 +99,9 @@ in-memory store. HTTP adapters and networked stores are opt-in.
 ## Where the open/commercial line sits
 
 The protocol, the pure core, the trait seams, and the single-node reference
-`NonceStore` are **open (Apache-2.0)**. Operating SESAME at scale, a distributed
-replay store, multi-tenant key management and rotation, audit, is the commercial
-counterpart (`ba-sesame-ops`). The `NonceStore` trait is the line.
+`NonceStore` are **open (Apache-2.0)**. Operating SESAME at scale (a distributed
+replay store, multi-tenant key management and rotation, audit) is left to
+separate operational tooling. The `NonceStore` trait is the line.
 
 ## Development
 
