@@ -23,11 +23,12 @@ Three additive tiers over a Tier-0 baseline, all carried in HTTP headers with
 See [`SESAME.md`](SESAME.md) for the byte-exact wire format (draft v0.5) and
 [`test-vectors/`](test-vectors/) for the conformance contract.
 
-> **Other languages:** native **C++** ([`cpp/`](cpp/)) and **Python**
-> ([`python/`](python/), PyPI `sesame-esam`) implementations live alongside this
-> crate, each proven against the same golden vectors, so a signer in any of the
-> three and a verifier in any other interoperate byte-for-byte. The test vectors
-> are the language-neutral contract any implementation validates against.
+> **Other languages:** native **C++** ([`cpp/`](cpp/)), **Python**
+> ([`python/`](python/), PyPI `sesame-esam`), and **Go** ([`go/`](go/))
+> implementations live alongside this crate, each proven against the same golden
+> vectors, so a signer in any of the four and a verifier in any other
+> interoperate byte-for-byte. The test vectors are the language-neutral contract
+> any implementation validates against.
 
 ## Provenance
 

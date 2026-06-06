@@ -84,3 +84,19 @@ jobs:
       # negative matrix.
       - name: Test (conformance + unit)
         run: pytest python/tests -q
+
+  go:
+    name: Go SDK (go test, conformance)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Format check
+        run: test -z "$(gofmt -l go)"
+      - name: Vet
+        run: cd go && go vet ./...
+      # Same golden vectors as the other SDKs, plus KATs and the negative matrix.
+      - name: Test (conformance + unit)
+        run: cd go && go test ./...

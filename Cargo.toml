@@ -14,7 +14,7 @@ documentation = "https://docs.rs/sesame-esam"
 keywords = ["scte", "esam", "sesame", "hmac", "authentication"]
 categories = ["cryptography", "authentication"]
 readme = "README.md"
-exclude = ["/.github", "/tools", "/cpp", "/python"]
+exclude = ["/.github", "/tools", "/cpp", "/python", "/go"]
 
 [lib]
 name = "sesame"
