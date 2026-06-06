@@ -69,3 +69,18 @@ jobs:
       # Rust crate proves against) plus the KAT/round-trip unit tests.
       - name: Test (conformance + unit)
         run: ctest --test-dir cpp/build --output-on-failure
+
+  python:
+    name: Python SDK (pytest, conformance)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (sesame-esam + pytest)
+        run: pip install ./python pytest
+      # Same golden vectors as the Rust crate and C++ SDK, plus KATs and the
+      # negative matrix.
+      - name: Test (conformance + unit)
+        run: pytest python/tests -q

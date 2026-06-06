@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sesame-esam"
+version = "0.1.0"
+description = "Native Python implementation of SESAME, the proposed SCTE 130-9 security layer for the ESAM interface (HMAC auth, channel-scoped authorization, AES-256-GCM payload encryption)."
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT OR Apache-2.0"
+authors = [{ name = "Bo Kelleher" }]
+keywords = ["scte", "esam", "sesame", "hmac", "aes-gcm", "cryptography", "ad-insertion"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Security :: Cryptography",
+]
+dependencies = ["cryptography>=3.4"]
+
+[project.urls]
+Homepage = "https://github.com/bokelleher/sesame-sdk"
+Repository = "https://github.com/bokelleher/sesame-sdk"
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sesame"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/sesame", "tests", "examples", "README.md"]
