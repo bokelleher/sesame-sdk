@@ -3,12 +3,31 @@ project(sesame_cpp LANGUAGES CXX VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)  # POSIX strptime/timegm
+set(CMAKE_CXX_EXTENSIONS OFF)  # standard C++17 only; no compiler extensions needed
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
 find_package(OpenSSL REQUIRED)
+
+# Warnings-as-errors is a CI/dev opt-in, not imposed on consumers (vcpkg etc.).
+option(SESAME_WERROR "Treat warnings as errors" OFF)
+
+# Compiler-appropriate warning flags. GCC/Clang flags are not valid for MSVC's
+# cl.exe (e.g. -Wextra is a fatal D8021 there), so they must be conditional.
+function(sesame_warnings tgt)
+  if(MSVC)
+    target_compile_options(${tgt} PRIVATE /W4)
+    if(SESAME_WERROR)
+      target_compile_options(${tgt} PRIVATE /WX)
+    endif()
+  else()
+    target_compile_options(${tgt} PRIVATE -Wall -Wextra -Wpedantic)
+    if(SESAME_WERROR)
+      target_compile_options(${tgt} PRIVATE -Werror)
+    endif()
+  endif()
+endfunction()
 
 add_library(sesame
   src/crypto_openssl.cpp
@@ -22,8 +41,7 @@ target_include_directories(sesame PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 target_link_libraries(sesame PUBLIC OpenSSL::Crypto)
-# Strict on our own code (the vendored test-only json header is not built here).
-target_compile_options(sesame PRIVATE -Wall -Wextra -Wpedantic -Werror)
+sesame_warnings(sesame)
 
 option(SESAME_BUILD_TESTS "Build tests" ON)
 option(SESAME_BUILD_EXAMPLES "Build examples" ON)
@@ -37,7 +55,7 @@ if(SESAME_BUILD_TESTS)
     add_executable(${t} tests/${t}.cpp)
     target_include_directories(${t} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
     target_link_libraries(${t} PRIVATE sesame OpenSSL::Crypto)
-    target_compile_options(${t} PRIVATE -Wall -Wextra)
+    sesame_warnings(${t})
     target_compile_definitions(${t} PRIVATE SESAME_VECTORS_DIR="${SESAME_VECTORS_DIR}")
     add_test(NAME ${t} COMMAND ${t})
   endforeach()
@@ -46,7 +64,7 @@ endif()
 if(SESAME_BUILD_EXAMPLES)
   add_executable(sign_request examples/sign_request.cpp)
   target_link_libraries(sign_request PRIVATE sesame OpenSSL::Crypto)
-  target_compile_options(sign_request PRIVATE -Wall -Wextra)
+  sesame_warnings(sign_request)
 endif()
 
 # ---------------------------------------------------------------------------
