@@ -1,13 +1,14 @@
 #include "sesame/protocol.hpp"
 
 #include <openssl/rand.h>
-#include <time.h>
 
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cstdio>
 #include <string_view>
 
+#include "civil_time.h"
 #include "sesame/canonical.hpp"
 #include "sesame/tier1.hpp"
 #include "sesame/tier3.hpp"
@@ -17,11 +18,21 @@ namespace sesame {
 static int level(Tier t) { return static_cast<int>(t); }
 
 std::string format_rfc3339_utc(std::int64_t unix_secs) {
-    time_t t = static_cast<time_t>(unix_secs);
-    struct tm g {};
-    gmtime_r(&t, &g);
+    std::int64_t days = unix_secs / 86400;
+    std::int64_t rem = unix_secs % 86400;
+    if (rem < 0) {
+        rem += 86400;
+        days -= 1;
+    }
+    std::int64_t y;
+    unsigned mo, d;
+    detail::civil_from_days(days, y, mo, d);
+    const int hh = static_cast<int>(rem / 3600);
+    const int mm = static_cast<int>((rem % 3600) / 60);
+    const int ss = static_cast<int>(rem % 60);
     char buf[32];
-    strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", &g);
+    std::snprintf(buf, sizeof(buf), "%04lld-%02u-%02uT%02d:%02d:%02dZ",
+                  static_cast<long long>(y), mo, d, hh, mm, ss);
     return std::string(buf);
 }
 
