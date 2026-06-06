@@ -1,66 +1,68 @@
-# sesame
+# SESAME
 
-[![crates.io](https://img.shields.io/crates/v/sesame-esam.svg)](https://crates.io/crates/sesame-esam)
-[![docs.rs](https://img.shields.io/docsrs/sesame-esam)](https://docs.rs/sesame-esam)
+[![CI](https://github.com/bokelleher/sesame-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/bokelleher/sesame-sdk/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/sesame-esam.svg?label=crates.io)](https://crates.io/crates/sesame-esam)
+[![PyPI](https://img.shields.io/pypi/v/sesame-esam?label=PyPI)](https://pypi.org/project/sesame-esam/)
+[![docs.rs](https://img.shields.io/docsrs/sesame-esam?label=docs.rs)](https://docs.rs/sesame-esam)
 [![license](https://img.shields.io/crates/l/sesame-esam.svg)](#license)
 
-The canonical implementation of **SESAME** (Secure ESAM Authentication and
-Message Encryption), the proposed SCTE 130-9 security layer for the ESAM
-interface. Any ESAM participant (POIS, ADS, encoder, packager, decoder) links
-this crate and speaks SESAME natively, so a signer and a verifier share one
-byte-identical implementation of the wire rules.
+**SESAME** (Secure ESAM Authentication and Message Encryption) is the proposed
+SCTE 130-9 security layer for the ESAM interface. It secures the two-party HTTP
+exchange between an ESAM client (encoder, packager, ADS) and an ESAM server
+(POIS) using three additive tiers, all carried in HTTP headers with **no change
+to any ESAM XML schema**.
 
-Three additive tiers over a Tier-0 baseline, all carried in HTTP headers with
-**no ESAM XML schema change**:
+This repository is the home of the standard **and** its reference
+implementations in four languages, every one of which is proven byte-for-byte
+against a single shared set of conformance vectors. A signer written in any
+language and a verifier written in any other interoperate exactly.
 
 | Tier | Capability | Mechanism |
 |---|---|---|
 | 0 | Unauthenticated baseline | no SESAME headers (backward compatible) |
-| 1 | Authentication + integrity | HMAC-SHA256 over a canonical string |
+| 1 | Authentication + integrity | HMAC-SHA256 over a canonical signing string |
 | 2 | Channel-scoped authorization | signed `X-SESAME-Scope`, policy lookup |
 | 3 | Payload encryption | AES-256-GCM (96-bit IV, 128-bit tag) |
 
-See [`SESAME.md`](SESAME.md) for the byte-exact wire format (draft v0.5) and
-[`test-vectors/`](test-vectors/) for the conformance contract.
+Plus signed responses, which authenticate the POIS's conditioning decision so a
+forged or tampered blackout/avail/redirect fails verification.
 
-> **Other languages:** native **C++** ([`cpp/`](cpp/)), **Python**
-> ([`python/`](python/), PyPI `sesame-esam`), and **Go** ([`go/`](go/))
-> implementations live alongside this crate, each proven against the same golden
-> vectors, so a signer in any of the four and a verifier in any other
-> interoperate byte-for-byte. The test vectors are the language-neutral contract
-> any implementation validates against.
+## Implementations
 
-## Provenance
+| Language | Install | Source | Distribution |
+|---|---|---|---|
+| **Rust** | `cargo add sesame-esam` | [`src/`](src/) | [crates.io](https://crates.io/crates/sesame-esam) |
+| **C++** | `find_package(sesame)` (CMake / vcpkg / Conan) | [`cpp/`](cpp/) | [`cpp/`](cpp/#install-and-consume) |
+| **Python** | `pip install sesame-esam` | [`python/`](python/) | [PyPI](https://pypi.org/project/sesame-esam/) |
+| **Go** | `go get github.com/bokelleher/sesame-sdk/go` | [`go/`](go/) | Go module |
 
-This crate was extracted byte-for-byte from the [`rust-pois`](https://github.com/bokelleher/rust-pois)
-reference implementation, which signs live ESAM traffic in production. It is the
-one home of the protocol; `rust-pois` is intended to depend on it. Byte-level
-parity is pinned by golden vectors generated from `rust-pois` and reproduced by
-`tests/conformance.rs`, so the two cannot silently diverge.
+The deployed [`rust-pois`](https://github.com/bokelleher/rust-pois) POIS server
+runs SESAME in production by depending on the Rust crate, so the protocol lives
+in exactly one place per language and there is no parallel copy to drift.
 
-## Design
+## The test vectors are the contract
 
-- **No I/O, no HTTP framework.** `verify_request` / `sign_response` take the
-  request parts, the parsed headers, the body, and `now`.
-- **The host owns the resources** via injected traits: the key directory
-  (`KeyProvider`) and the replay memory (`ReplayCache`). A single-node in-memory
-  replay cache ships; distributed stores are the host's concern.
-- **RNG is feature-gated.** Verification is RNG-free. Signing needs a fresh
-  nonce/IV, so `sign_response` and the IV/nonce helpers sit behind the default-on
-  `rng` feature; build `--no-default-features` for a verify-only or embedded host.
+[`test-vectors/tier1.json`](test-vectors/) and
+[`test-vectors/tier3.json`](test-vectors/) are the language-neutral conformance
+contract. They are generated from the deployed `rust-pois` implementation and
+pin the exact bytes on the wire (canonical strings, HMAC signatures, GCM
+associated data, `ciphertext||tag`). **An implementation is conformant if, and
+only if, it reproduces every `expected_*` value byte-for-byte.** Each SDK proves
+exactly that, in CI:
 
-## Quick start
+| | Rust | C++ | Python | Go |
+|---|---|---|---|---|
+| Conformance | `cargo test` | `ctest` | `pytest` | `go test` |
+
+See [`SESAME.md`](SESAME.md) for the byte-exact wire format (draft v0.5),
+[`test-vectors/README.md`](test-vectors/README.md) for how to consume the
+vectors from any language, and [`CONTRIBUTING.md`](CONTRIBUTING.md) to add a new
+language implementation.
+
+## Quick start (Rust)
 
 ```sh
-cargo add sesame-esam
-```
-
-The crates.io package is [`sesame-esam`](https://crates.io/crates/sesame-esam);
-it is imported as `sesame`:
-
-```toml
-[dependencies]
-sesame = { package = "sesame-esam", version = "0.1" }
+cargo add sesame-esam   # imported as `sesame`
 ```
 
 Verify an inbound request (the POIS side):
@@ -72,27 +74,22 @@ use sesame::replay::InMemoryReplayCache;
 use time::OffsetDateTime;
 
 let provider = StaticKeyProvider::new().with_signing_key(
-    "sas-east-01",
-    HmacKey(b"shared-secret".to_vec()),
-    ChannelScope::list(["SportsFeed-East"]),
-);
+    "sas-east-01", HmacKey(b"shared-secret".to_vec()),
+    ChannelScope::list(["SportsFeed-East"]));
 let replay = InMemoryReplayCache::new(300);
 
-// headers parsed from the request (case-insensitive); see axum_adapter for HeaderMap.
 let headers = SesameHeaders::from_lookup(|name| request_header(name));
 let ctx = RequestContext { method: "POST", path: "/esam", target_channel: None };
 
-let verified = verify_request(
-    &SesameConfig::default(), &provider, &replay,
-    &ctx, &headers, body_bytes, OffsetDateTime::now_utc(), Tier::One,
-)?;
+let verified = verify_request(&SesameConfig::default(), &provider, &replay,
+    &ctx, &headers, body_bytes, OffsetDateTime::now_utc(), Tier::One)?;
 // verified.plaintext is the ESAM XML; verified.achieved_tier / key_id / scope_channel
 # fn request_header(_: &str) -> Option<String> { None }
 # let body_bytes = b"";
 # Ok::<(), sesame::SesameError>(())
 ```
 
-Sign an outbound response (the POIS side, requires the `rng` feature):
+Sign an outbound response (requires the default-on `rng` feature):
 
 ```rust
 use sesame::{sign_response, ResponseParams, SesameConfig, Tier};
@@ -101,44 +98,53 @@ use sesame::{sign_response, ResponseParams, SesameConfig, Tier};
 let params = ResponseParams {
     signing_key_id: "pois-primary",
     correlation: "ap-1:sigid-20260224-001", // the acquisitionSignalID answered
-    scope: None,
-    tier: Tier::One,
-    enc_key_id: None,
+    scope: None, tier: Tier::One, enc_key_id: None,
 };
 // let resp = sign_response(&SesameConfig::default(), &provider, &params, xml, now)?;
-// attach resp.headers, send resp.body with resp.content_type
 ```
 
-## Features
+The C++, Python, and Go SDKs expose the same shape (`verify_request` /
+`sign_response`, the `KeyProvider` and `ReplayCache` seams, Tier 0-3); see each
+language's README for idiomatic usage.
 
-| Feature | Default | What it adds |
-|---|:--:|--------------|
-| `rng` | ✅ | CSPRNG helpers: `sign_response`, `tier3_aead::random_iv`. |
-| `serde` |  | Derives on the conformance-vector types (tests/tooling). |
-| `axum` |  | `headers_from_map` over `http::HeaderMap`. |
+## Design
 
-## Open / commercial line
+Common to every implementation:
 
-The protocol, the pure core, and the trait seams (`KeyProvider`, `ReplayCache`)
-are open (MIT or Apache-2.0), as is the single-node reference replay cache. Operating
-SESAME at scale (a distributed replay store, multi-tenant key management and
-rotation, audit) is left to separate operational tooling. The traits are the
-line.
+- **No I/O, no HTTP framework.** `verify_request` / `sign_response` take the
+  request parts, parsed headers, body, and `now`.
+- **The host owns the resources** via injected seams: the key directory
+  (`KeyProvider`) and the replay memory (`ReplayCache`). A single-node in-memory
+  replay cache ships; distributed stores are the host's concern.
+- **Verification is RNG-free.** Only signing needs a fresh nonce/IV (gated behind
+  the Rust `rng` feature; the other SDKs draw from the OS CSPRNG when signing).
 
-## Development
+## Provenance
 
-```sh
-cargo test --features serde            # unit + conformance
-cargo clippy --all-features --all-targets
-cargo build --no-default-features      # verify-only / RNG-free
-```
+The Rust crate was extracted byte-for-byte from the deployed `rust-pois`
+reference implementation, which signs live ESAM traffic in production. The
+golden vectors are generated from `rust-pois` (via
+[`tools/golden-extractor`](tools/golden-extractor/)); the C++, Python, and Go
+SDKs were then written independently and validated against those same vectors.
+Four from-scratch implementations agreeing on the wire is the strongest evidence
+that SESAME is a real, implementable standard.
 
-The golden vectors are regenerated from `rust-pois` via
-[`tools/golden-extractor`](tools/golden-extractor/), not in CI; CI asserts the
-crate still reproduces the committed vectors.
+## Where the open/commercial line sits
+
+The protocol, the implementations, and the trait seams (`KeyProvider`,
+`ReplayCache`) are open. Operating SESAME at scale (a distributed replay store,
+multi-tenant key management and rotation, audit) is left to separate operational
+tooling. The seams are the line.
+
+## Status
+
+Pre-1.0 by design: the wire spec is draft v0.5, not yet a ratified SCTE
+standard. `1.0` waits on SCTE formalization. The bar the project set for "a real
+standard, a second implementer can adopt it in an afternoon" is already met four
+times over.
 
 ## License
 
-Code: dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at
-your option (extracted from `rust-pois`, originally MIT, © POIS Contributors).
-Specification text (`SESAME.md`): [`LICENSE-SPEC`](LICENSE-SPEC).
+Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your
+option (the Rust core was extracted from `rust-pois`, originally MIT, © POIS
+Contributors). Specification text (`SESAME.md`): [`LICENSE-SPEC`](LICENSE-SPEC).
