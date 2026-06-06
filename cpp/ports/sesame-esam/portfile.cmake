@@ -12,7 +12,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO bokelleher/sesame-sdk
     REF cpp-v0.1.0
-    SHA512 0
+    SHA512 3608d626597661f8b0e2a05023de616f5ea2810175cd06f65500fb60773f16c703e9c1738da6ea12671188bdc2d8748d05e66770fa511ed204a8822e7fdeec1f
     HEAD_REF main
 )
 
