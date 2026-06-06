@@ -53,3 +53,19 @@ jobs:
       # floor is reproducible and a dependency floating its own MSRV upward
       # cannot silently break this job.
       - run: cargo build --all-features --locked
+
+  cpp:
+    name: C++ SDK (cmake, conformance)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y cmake libssl-dev
+      - name: Configure
+        run: cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build cpp/build -j
+      # Reproduce the golden vectors byte-for-byte (the same test-vectors/ the
+      # Rust crate proves against) plus the KAT/round-trip unit tests.
+      - name: Test (conformance + unit)
+        run: ctest --test-dir cpp/build --output-on-failure

@@ -23,6 +23,11 @@ Three additive tiers over a Tier-0 baseline, all carried in HTTP headers with
 See [`SESAME.md`](SESAME.md) for the byte-exact wire format (draft v0.5) and
 [`test-vectors/`](test-vectors/) for the conformance contract.
 
+> **Other languages:** a native **C++** implementation lives in
+> [`cpp/`](cpp/), proven against the same golden vectors, so a C++ signer and a
+> Rust verifier interoperate byte-for-byte. The test vectors are the
+> language-neutral contract any implementation can validate against.
+
 ## Provenance
 
 This crate was extracted byte-for-byte from the [`rust-pois`](https://github.com/bokelleher/rust-pois)

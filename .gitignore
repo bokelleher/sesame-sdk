@@ -10,3 +10,6 @@ handoff-rust-sesame.md
 
 # rust-pois integration report (correspondence; not shipped)
 report-from-rust-pois.md
+
+# C++ build output
+cpp/build/
