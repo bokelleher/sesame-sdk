@@ -37,6 +37,42 @@ ctest --test-dir build --output-on-failure
 CMake options: `SESAME_BUILD_TESTS` (default ON), `SESAME_BUILD_EXAMPLES`
 (default ON), `SESAME_VECTORS_DIR` (defaults to `../test-vectors`).
 
+## Install and consume
+
+The library installs an exported CMake package, so consumers use
+`find_package(sesame)` and link `sesame::sesame` (which carries the OpenSSL
+dependency transitively).
+
+```sh
+cmake -S cpp -B build -DSESAME_BUILD_TESTS=OFF -DSESAME_BUILD_EXAMPLES=OFF
+cmake --build build -j
+cmake --install build --prefix /your/prefix
+```
+
+```cmake
+# consumer CMakeLists.txt
+find_package(sesame CONFIG REQUIRED)
+target_link_libraries(app PRIVATE sesame::sesame)
+```
+
+### vcpkg
+
+An overlay port lives in [`ports/sesame-esam`](ports/sesame-esam/). The package
+name is `sesame-esam`; it still imports as `find_package(sesame)`.
+
+```sh
+vcpkg install sesame-esam --overlay-ports=cpp/ports
+```
+
+### Conan
+
+[`conanfile.py`](conanfile.py) packages the library (depends on `openssl/3.x`):
+
+```sh
+conan create cpp --build=missing
+# then in your conanfile / CMakeDeps: find_package(sesame) + sesame::sesame
+```
+
 ## Quick start
 
 Verify an inbound request (the POIS side):
