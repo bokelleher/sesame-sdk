@@ -43,6 +43,11 @@ target_include_directories(sesame PUBLIC
 target_link_libraries(sesame PUBLIC OpenSSL::Crypto)
 sesame_warnings(sesame)
 
+# On Windows a shared build must export its symbols; MSVC exports nothing by
+# default (unlike GCC/Clang) and the API has no __declspec annotations, so let
+# CMake auto-generate the export table. No-op on non-Windows / static builds.
+set_target_properties(sesame PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 option(SESAME_BUILD_TESTS "Build tests" ON)
 option(SESAME_BUILD_EXAMPLES "Build examples" ON)
 
