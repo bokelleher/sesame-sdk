@@ -31,10 +31,6 @@ interoperability contract and are unchanged by any release below.
 
   The same fix is applied to the C++, Python, and Go SDKs.
 
-  Deployments on 0.1.2 or earlier that run sustained load with high nonce
-  cardinality should upgrade: the effect grows with both request rate and
-  thread count.
-
 ### Changed
 
 - `InMemoryReplayCache::len()` (and the C++, Python, and Go equivalents) may now
@@ -50,6 +46,13 @@ interoperability contract and are unchanged by any release below.
 - `benches/load.rs`, a sustained-load harness measuring the full inbound verify
   path with the replay cache in the request path, under concurrency. Run with
   `cargo bench --bench load`.
+
+### Deprecated
+
+- **0.1.2 and earlier are superseded; use 0.1.3.** Their replay cache degrades
+  under sustained load, so there is no reason to select an earlier version.
+  0.1.3 is a drop-in replacement: no API changes, and the golden conformance
+  vectors are unchanged.
 
 ## [0.1.2] and earlier
 
