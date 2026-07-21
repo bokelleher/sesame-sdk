@@ -24,23 +24,33 @@ pub trait ReplayCache: Send + Sync {
     fn check_and_remember(&self, key_id: &str, nonce: &str, now_unix: i64) -> bool;
 }
 
+struct State {
+    map: HashMap<(String, String), i64>, // (key_id, nonce) -> expiry unix secs
+    /// Wall-clock second at which the last full sweep ran, so the O(n) sweep is
+    /// amortized over a second's worth of traffic instead of paid per request.
+    last_prune_unix: i64,
+}
+
 /// In-memory TTL replay cache, bounded by the replay window.
 pub struct InMemoryReplayCache {
     window_secs: i64,
-    seen: Mutex<HashMap<(String, String), i64>>, // (key_id, nonce) -> expiry unix secs
+    seen: Mutex<State>,
 }
 
 impl InMemoryReplayCache {
     pub fn new(window_secs: i64) -> Self {
         InMemoryReplayCache {
             window_secs,
-            seen: Mutex::new(HashMap::new()),
+            seen: Mutex::new(State {
+                map: HashMap::new(),
+                last_prune_unix: i64::MIN,
+            }),
         }
     }
 
     /// Number of live entries (after pruning is opportunistic, this is best-effort).
     pub fn len(&self) -> usize {
-        self.seen.lock().unwrap().len()
+        self.seen.lock().unwrap().map.len()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -50,16 +60,25 @@ impl InMemoryReplayCache {
 
 impl ReplayCache for InMemoryReplayCache {
     fn check_and_remember(&self, key_id: &str, nonce: &str, now_unix: i64) -> bool {
-        let mut map = self.seen.lock().unwrap();
-        // Opportunistically prune expired entries so the cache stays bounded by
-        // the window regardless of throughput.
-        map.retain(|_, &mut expiry| expiry > now_unix);
+        let st = &mut *self.seen.lock().unwrap();
+
+        // Prune expired entries so the cache stays bounded by the window. The
+        // sweep is O(n), so it runs at most once per wall-clock second rather
+        // than once per request: at R req/s the amortized cost is O(1) per
+        // request instead of O(window * R). Sweeping less often only lets
+        // already-expired entries linger for up to a second, which cannot
+        // cause a false accept (a lingering entry rejects, never admits) and
+        // leaves the bound at (window + 1) seconds of traffic.
+        if now_unix > st.last_prune_unix {
+            st.map.retain(|_, &mut expiry| expiry > now_unix);
+            st.last_prune_unix = now_unix;
+        }
 
         let key = (key_id.to_string(), nonce.to_string());
-        if map.contains_key(&key) {
+        if st.map.contains_key(&key) {
             return false; // replay
         }
-        map.insert(key, now_unix + self.window_secs);
+        st.map.insert(key, now_unix + self.window_secs);
         true
     }
 }
