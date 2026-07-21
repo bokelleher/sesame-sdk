@@ -5,14 +5,14 @@
 # then in your project: find_package(sesame CONFIG REQUIRED)
 #                       target_link_libraries(app PRIVATE sesame::sesame)
 #
-# SHA512 is pinned to the cpp-v0.1.1 tag's source archive. Update REF + SHA512
+# SHA512 is pinned to the cpp-v0.1.2 tag's source archive. Update REF + SHA512
 # (run `vcpkg install` once to have it print the correct hash) when bumping.
 
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO bokelleher/sesame-sdk
-    REF cpp-v0.1.1
-    SHA512 b93b286b17aa6f3705747935bedce150b5ab2b0d5df91cd5cbd5a49e5c03c1d0e6691bc5003ba95673b7bbcd63af983238be4b852dfdd39c0b5398d3315f84b9
+    REF cpp-v0.1.2
+    SHA512 b8d3368db0662dc12b3e02e3f016d7cadd4955430ea94303a84aa1c39fa95735e8251575b3366f3b18233ce7f80d769a50428b6c7eec0c1d2cf24f9f3c633338
     HEAD_REF main
 )
 
