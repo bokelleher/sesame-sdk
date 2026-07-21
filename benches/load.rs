@@ -28,11 +28,7 @@ fn now() -> OffsetDateTime {
 }
 
 fn provider() -> StaticKeyProvider {
-    StaticKeyProvider::new().with_signing_key(
-        KEY_ID,
-        HmacKey(SECRET.to_vec()),
-        ChannelScope::all(),
-    )
+    StaticKeyProvider::new().with_signing_key(KEY_ID, HmacKey(SECRET.to_vec()), ChannelScope::all())
 }
 
 /// A pre-signed request. Signing is done up front so the measured loop is
@@ -81,7 +77,10 @@ fn percentile(sorted_nanos: &[u128], p: f64) -> f64 {
 /// Phase A: how does per-request cost move as the replay cache fills?
 fn phase_growth(body_len: usize) {
     println!("\n== Phase A: per-request verify cost vs. replay-cache occupancy ==");
-    println!("   (single thread, Tier 1, {}-byte body, 300 s window)", body_len);
+    println!(
+        "   (single thread, Tier 1, {}-byte body, 300 s window)",
+        body_len
+    );
     println!(
         "{:>12} {:>14} {:>12} {:>12}",
         "cache size", "batch p50 (us)", "req/s", "elapsed(s)"
@@ -90,7 +89,11 @@ fn phase_growth(body_len: usize) {
     let p = provider();
     let cache = InMemoryReplayCache::new(300);
     let cfg = SesameConfig::default();
-    let ctx = RequestContext { method: "POST", path: PATH, target_channel: None };
+    let ctx = RequestContext {
+        method: "POST",
+        path: PATH,
+        target_channel: None,
+    };
     let n = 60_000usize;
     let reqs = make_requests(n, 0, body_len, true);
 
@@ -124,7 +127,10 @@ fn phase_growth(body_len: usize) {
 /// Phase B: throughput under concurrency (shared replay cache).
 fn phase_concurrency(body_len: usize, threads_list: &[usize]) {
     println!("\n== Phase B: sustained throughput under concurrency (shared cache) ==");
-    println!("   (Tier 1, {}-byte body, 20k requests per thread)", body_len);
+    println!(
+        "   (Tier 1, {}-byte body, 20k requests per thread)",
+        body_len
+    );
     println!(
         "{:>8} {:>14} {:>12} {:>12}",
         "threads", "total req/s", "p50 (us)", "p99 (us)"
@@ -147,13 +153,24 @@ fn phase_concurrency(body_len: usize, threads_list: &[usize]) {
                 .map(|reqs| {
                     let (p, cache, cfg, counter) = (&p, &cache, &cfg, &counter);
                     s.spawn(move || {
-                        let ctx = RequestContext { method: "POST", path: PATH, target_channel: None };
+                        let ctx = RequestContext {
+                            method: "POST",
+                            path: PATH,
+                            target_channel: None,
+                        };
                         let now = now();
                         let mut lat = Vec::with_capacity(reqs.len());
                         for r in reqs {
                             let t0 = Instant::now();
                             let _ = verify_request(
-                                cfg, p, cache, &ctx, &r.headers, &r.body, now, Tier::One,
+                                cfg,
+                                p,
+                                cache,
+                                &ctx,
+                                &r.headers,
+                                &r.body,
+                                now,
+                                Tier::One,
                             );
                             lat.push(t0.elapsed().as_nanos());
                         }
@@ -186,10 +203,17 @@ fn phase_rejection(body_len: usize) {
 
     let p = provider();
     let cfg = SesameConfig::default();
-    let ctx = RequestContext { method: "POST", path: PATH, target_channel: None };
+    let ctx = RequestContext {
+        method: "POST",
+        path: PATH,
+        target_channel: None,
+    };
     let n = 40_000usize;
 
-    for (label, valid) in [("valid (accepted)", true), ("invalid sig (rejected)", false)] {
+    for (label, valid) in [
+        ("valid (accepted)", true),
+        ("invalid sig (rejected)", false),
+    ] {
         let cache = InMemoryReplayCache::new(300);
         let reqs = make_requests(n, 7, body_len, valid);
         let mut lat = Vec::with_capacity(n);
@@ -214,7 +238,12 @@ fn phase_rejection(body_len: usize) {
 
 fn main() {
     println!("SESAME sustained-load benchmark");
-    println!("cores={} ", std::thread::available_parallelism().map(|v| v.get()).unwrap_or(0));
+    println!(
+        "cores={} ",
+        std::thread::available_parallelism()
+            .map(|v| v.get())
+            .unwrap_or(0)
+    );
     let body_len = 1024;
     phase_growth(body_len);
     phase_concurrency(body_len, &[1, 2, 4, 8]);
