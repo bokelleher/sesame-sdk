@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sesame-esam"
-version = "0.1.0"
+version = "0.1.1"
 description = "Native Python implementation of SESAME, the proposed SCTE 130-9 security layer for the ESAM interface (HMAC auth, channel-scoped authorization, AES-256-GCM payload encryption)."
 readme = "README.md"
 requires-python = ">=3.8"
