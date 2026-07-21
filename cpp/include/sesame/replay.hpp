@@ -25,6 +25,9 @@ class InMemoryReplayCache : public ReplayCache {
     std::int64_t window_secs_;
     std::mutex mu_;
     std::map<std::pair<std::string, std::string>, std::int64_t> seen_;  // (key,nonce) -> expiry
+    // Wall-clock second of the last full sweep, so the O(n) sweep is amortized
+    // over a second of traffic instead of paid per request.
+    std::int64_t last_prune_unix_ = INT64_MIN;
 
 public:
     explicit InMemoryReplayCache(std::int64_t window_secs) : window_secs_(window_secs) {}
@@ -32,11 +35,18 @@ public:
     bool check_and_remember(const std::string& key_id, const std::string& nonce,
                             std::int64_t now_unix) override {
         std::lock_guard<std::mutex> lk(mu_);
-        for (auto it = seen_.begin(); it != seen_.end();) {
-            if (it->second <= now_unix)
-                it = seen_.erase(it);
-            else
-                ++it;
+        // Sweep at most once per second: at R req/s this is O(1) amortized per
+        // request rather than O(window * R). Letting an expired entry linger for
+        // up to a second cannot cause a false accept (a stale entry rejects,
+        // never admits); the bound becomes (window + 1) seconds of traffic.
+        if (now_unix > last_prune_unix_) {
+            for (auto it = seen_.begin(); it != seen_.end();) {
+                if (it->second <= now_unix)
+                    it = seen_.erase(it);
+                else
+                    ++it;
+            }
+            last_prune_unix_ = now_unix;
         }
         auto key = std::make_pair(key_id, nonce);
         if (seen_.count(key) > 0) return false;
