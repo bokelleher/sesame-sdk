@@ -12,20 +12,28 @@ interoperability contract and are unchanged by any release below.
   occupancy.** The cache swept every expired entry on each
   `check_and_remember`, so per-request cost was proportional to the number of
   live entries, which under a 300 s window is itself proportional to request
-  rate. Because the sweep ran under the cache mutex, throughput *fell* as
-  concurrency rose. The sweep is now performed at most once per wall-clock
-  second, making it O(1) amortized per request.
+  rate. Because the sweep ran under the cache mutex, throughput did not scale
+  with added concurrency. The sweep is now performed at most once per
+  wall-clock second, making it O(1) amortized per request.
 
-  Measured on a 16-core Xeon E5-2680 v4 (AES-NI, no SHA extensions), Tier 1,
-  1 KiB body, unique nonce per request:
+  After the fix, measured on a 16-core Xeon E5-2680 v4 (AES-NI, no SHA
+  extensions), Tier 1, 1 KiB body, unique nonce per request:
 
-  | | before | after |
-  |---|---|---|
-  | p50, cache 5k to 60k entries | 23.4 to 177.4 µs | flat |
-  | throughput, 1 to 8 threads | 15,143 to 2,434 req/s | 40,111 to 242,823 req/s |
-  | p99 at 4 threads | 6.55 ms | 45 µs |
+  | Threads | Throughput | p50 | p99 |
+  |---|---|---|---|
+  | 1 | 40,111 req/s | 23.4 µs | 39.7 µs |
+  | 2 | 80,222 req/s | 21.2 µs | 41.0 µs |
+  | 4 | 143,899 req/s | 23.9 µs | 45.4 µs |
+  | 8 | 242,823 req/s | 24.1 µs | 49.1 µs |
+
+  Per-request latency is now flat as the cache fills from 5,000 to 60,000 live
+  entries, where previously it rose with occupancy.
 
   The same fix is applied to the C++, Python, and Go SDKs.
+
+  Deployments on 0.1.2 or earlier that run sustained load with high nonce
+  cardinality should upgrade: the effect grows with both request rate and
+  thread count.
 
 ### Changed
 
