@@ -143,6 +143,22 @@ standard. `1.0` waits on SCTE formalization. The bar the project set for "a real
 standard, a second implementer can adopt it in an afternoon" is already met four
 times over.
 
+Release history is in [CHANGELOG.md](CHANGELOG.md). Note that 0.1.2 and earlier
+are superseded and yanked; use 0.1.3 or later.
+
+## Benchmarks
+
+Two harnesses, measuring different things. `cargo bench` runs Criterion
+micro-benchmarks over the individual cryptographic operations. `cargo bench
+--bench load` runs a sustained-load harness that exercises the full inbound
+verify path with the replay cache in the request path, reporting per-request
+cost against cache occupancy, throughput under concurrency, payload
+sensitivity, and the cost of rejecting an invalid signature.
+
+The second one exists because the first cannot see the replay cache, and the
+replay cache is where the latency budget is actually won or lost. See
+[Cache maintenance](SESAME.md#cache-maintenance) in the spec.
+
 ## License
 
 Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your

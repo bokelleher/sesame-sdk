@@ -134,6 +134,52 @@ authorize, Tier 3 decrypt, parse XML. Fail closed at each step.
 - The reference cache is in-memory and per-process. Horizontally scaled
   deployments back the `ReplayCache` trait with a shared store.
 
+### What the window is for
+
+The window is not an interval in which replay succeeds. A request replayed
+inside it presents a `(KeyId, Nonce)` the server has already recorded and is
+refused by the cache; one replayed outside it fails the freshness check. The two
+checks are complementary and leave no gap between them. The window's function is
+to bound cache residency: an entry need only be retained while a timestamp could
+still be considered fresh, so live entries are at most (window × request rate).
+
+### Clock discipline
+
+The window MUST exceed the worst-case clock offset between a signing client and
+the verifying server, since a larger offset rejects legitimate traffic.
+Deployments SHOULD discipline both ends against a common time source. NTP is
+sufficient at this scale, and broadcast facilities typically already distribute
+PTP or GPS time for unrelated reasons.
+
+`sesame_expired_timestamp` is deliberately distinct from
+`sesame_signature_mismatch` so operators can alarm on the former: a rising rate
+of timestamp rejections indicates clock drift, not attack.
+
+A server whose own clock is undisciplined fails closed and rejects all traffic.
+That is the correct direction, but it makes the server's time source an
+availability dependency that deployment planning must account for.
+
+### Cache maintenance
+
+Expiring entries is where an otherwise correct implementation can still miss the
+latency budget. A cache that sweeps expired entries on every lookup costs O(n)
+per request, where n is (window × request rate); under a shared lock this also
+makes throughput fall as concurrency rises rather than scale with it.
+Implementations SHOULD amortize expiry, for example by sweeping at most once per
+wall-clock second, so that per-request cost is O(1).
+
+Retaining an already-expired entry slightly longer is safe: a stale entry can
+only cause a rejection, never a false acceptance. The cost of amortizing is that
+the memory bound becomes (window + sweep interval) × request rate.
+
+### Cache loss
+
+Replay protection holds only while the cache holds. A restart that discards an
+in-memory cache reopens replay for the remainder of the window, and nodes that
+do not share a cache allow a request accepted by one to be replayed against
+another. Deployments that require strict replay protection across restarts or
+across nodes MUST back the `ReplayCache` seam with a shared store.
+
 ## Error codes
 
 Distinct fail-closed errors map to wire codes and HTTP status (Appendix A.7):
