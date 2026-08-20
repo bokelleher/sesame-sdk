@@ -2,7 +2,56 @@
 
 All notable changes to the SESAME SDK. The wire protocol is specified in
 [SESAME.md](SESAME.md); the golden vectors in `test-vectors/` are the
-interoperability contract and are unchanged by any release below.
+interoperability contract; a release may add vectors but never alters a
+previously published `expected_*` value.
+
+## [0.1.4] - 2026-08-20
+
+Hardening release. No wire-format change: every previously published golden
+vector reproduces byte-for-byte, and one vector is added. All API changes are
+additive.
+
+### Fixed
+
+- **`axum_adapter` request-target example dropped the query.** The module's only
+  worked HTTP-integration example built the canonical string's second field from
+  `uri.path()`, which stops at the `?`, leaving the query string unsigned and
+  modifiable in transit. It compiled, worked, and passed every golden vector
+  while being query-blind, exactly the Tier 1 threat the signature exists to
+  close. The example now derives the full request-target and takes it from
+  `OriginalUri`.
+
+### Added
+
+- **`axum_adapter::request_target(&Uri) -> &str`** (feature `axum`): the correct
+  origin-form request-target (`absolute-path [ "?" query ]`, byte-for-byte, no
+  normalization) so integrators do not hand-roll the one derivation that fails
+  silently when wrong. A test asserts byte-equality with the `rust-pois`
+  reference derivation across a URI matrix (query, multi-param, percent-encoding,
+  absolute-form).
+- **Golden vector `tier1 request, query component signed`** isolates a Tier-1
+  request bearing a query with no scope, pinning that the query is inside the
+  signature independently of Tier 2. Reproduced byte-for-byte by all four SDKs.
+
+### Security
+
+- **Request-target scope stated normatively.** `SESAME.md` now specifies that the
+  second canonical field is the request-target including the query, explicitly
+  not the RFC 3986 `path` component, taken as transmitted with no normalization.
+- **Protocol version handling stated normatively (downgrade closure).** New
+  `SESAME.md` "Protocol version" section fixes byte-exact `X-SESAME-Version`
+  equality as a security invariant: the header is not in the canonical string and
+  so is unauthenticated at Tiers 1 and 2, which makes strict equality a
+  fail-closed rejection rather than a downgrade vector. Extension proceeds by
+  binding new material into the canonical string, not by version negotiation; a
+  verifier that ever accepts more than one version SHALL bind the version into
+  the canonical string first. Each SDK's version check carries a matching guard
+  comment. Behavior is unchanged: all four SDKs already compared byte-exact.
+
+### Documented
+
+- Python `RequestContext.path` now documents that it is the full request-target
+  (path and query), matching the Rust, Go, and C++ SDKs.
 
 ## [0.1.3] - 2026-07-21
 

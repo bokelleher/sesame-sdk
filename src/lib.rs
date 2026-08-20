@@ -173,6 +173,13 @@ pub fn verify_request(
     // --- Tier 1: authentication + integrity ---
     let t1 = headers.require_tier1()?;
 
+    // Version handling is a fixed security property, not a policy knob (see
+    // "Protocol version" in SESAME.md). X-SESAME-Version is NOT in the canonical
+    // string, so at Tiers 1/2 it is unauthenticated and an intermediary can
+    // rewrite it. Byte-exact equality makes any rewrite fail closed
+    // (InvalidVersion) rather than enabling a downgrade. Do NOT loosen this to
+    // accept other minor versions without first binding the version into the
+    // canonical string, or the downgrade reopens.
     if t1.version != PROTOCOL_VERSION {
         return Err(SesameError::InvalidVersion);
     }

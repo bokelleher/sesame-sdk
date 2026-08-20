@@ -85,6 +85,13 @@ func VerifyRequest(cfg Config, provider KeyProvider, replay ReplayCache, ctx Req
 		headers.Nonce == "" || headers.Signature == "" {
 		return nil, ErrMissingHeaders
 	}
+	// Version handling is a fixed security property, not a policy knob (see
+	// "Protocol version" in SESAME.md). X-SESAME-Version is NOT in the canonical
+	// string, so at Tiers 1/2 it is unauthenticated and an intermediary can
+	// rewrite it. Byte-exact equality makes any rewrite fail closed
+	// (ErrInvalidVersion) rather than enabling a downgrade. Do NOT loosen this to
+	// accept other minor versions without first binding the version into the
+	// canonical string, or the downgrade reopens.
 	if headers.Version != ProtocolVersion {
 		return nil, ErrInvalidVersion
 	}

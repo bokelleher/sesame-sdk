@@ -125,6 +125,8 @@ fn main() {
             req_vector("tier1 request, no scope", "POST", "/esam", None, xml, Some(xml_s), false),
             req_vector("tier2 request, scope in path and signed", "POST",
                        "/esam?channel=SportsFeed-East", Some(SCOPE), xml, Some(xml_s), false),
+            req_vector("tier1 request, query component signed (request-target, not RFC 3986 path)",
+                       "POST", "/esam?channel=SportsFeed-East&priority=high", None, xml, Some(xml_s), false),
             req_vector("tier1 request, empty body", "POST", "/esam", None, b"", Some(""), false),
             req_vector("tier3 request, signature over ciphertext||tag (encrypt-then-MAC)",
                        "POST", "/esam", None, &ct_ns, None, true),

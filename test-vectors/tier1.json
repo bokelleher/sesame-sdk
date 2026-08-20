@@ -30,6 +30,20 @@
       "timestamp": "2026-02-24T18:00:00Z"
     },
     {
+      "body_hex": "3c5369676e616c50726f63657373696e674e6f74696669636174696f6e206163717569736974696f6e506f696e744964656e746974793d2261702d31222f3e",
+      "body_is_encrypted": false,
+      "body_utf8": "<SignalProcessingNotification acquisitionPointIdentity=\"ap-1\"/>",
+      "expected_canonical": "POST\n/esam?channel=SportsFeed-East&priority=high\n2026-02-24T18:00:00Z\na1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6\nd64f3b54575e97f16c49e93352343c6aa98924a8dc2ac55797472c83d356868f",
+      "expected_signature_hex": "3732ed76330bf7949fc0b81b4790b2b108718739c9e5978133bce74ea513d5d6",
+      "method": "POST",
+      "name": "tier1 request, query component signed (request-target, not RFC 3986 path)",
+      "nonce": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+      "path": "/esam?channel=SportsFeed-East&priority=high",
+      "scope": null,
+      "signing_key_hex": "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210",
+      "timestamp": "2026-02-24T18:00:00Z"
+    },
+    {
       "body_hex": "",
       "body_is_encrypted": false,
       "body_utf8": "",

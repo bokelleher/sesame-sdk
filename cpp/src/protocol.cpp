@@ -77,6 +77,13 @@ VerifyResult verify_request(const SesameConfig& cfg, const KeyProvider& provider
     const std::string& nonce = *headers.nonce;
     const std::string& signature = *headers.signature;
 
+    // Version handling is a fixed security property, not a policy knob (see
+    // "Protocol version" in SESAME.md). X-SESAME-Version is NOT in the canonical
+    // string, so at Tiers 1/2 it is unauthenticated and an intermediary can
+    // rewrite it. Byte-exact equality makes any rewrite fail closed
+    // (InvalidVersion) rather than enabling a downgrade. Do NOT loosen this to
+    // accept other minor versions without first binding the version into the
+    // canonical string, or the downgrade reopens.
     if (version != PROTOCOL_VERSION) return VerifyResult::failure(SesameError::InvalidVersion);
 
     if (!tier1::check_freshness(timestamp, now_unix, cfg.replay_window_secs))

@@ -144,7 +144,7 @@ standard, a second implementer can adopt it in an afternoon" is already met four
 times over.
 
 Release history is in [CHANGELOG.md](CHANGELOG.md). Note that 0.1.2 and earlier
-are superseded and yanked; use 0.1.3 or later.
+are superseded and yanked; use 0.1.4 or later.
 
 ## Benchmarks
 

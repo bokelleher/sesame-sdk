@@ -6,7 +6,7 @@ import os
 
 class SesameEsamConan(ConanFile):
     name = "sesame-esam"
-    version = "0.1.0"
+    version = "0.1.4"
     license = "MIT OR Apache-2.0"
     homepage = "https://github.com/bokelleher/sesame-sdk"
     url = "https://github.com/bokelleher/sesame-sdk"

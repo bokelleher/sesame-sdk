@@ -40,8 +40,15 @@ class VerifiedRequest:
 
 @dataclass
 class RequestContext:
+    """Verification inputs beyond the SESAME headers and body."""
+
     method: str
+    # request-target in origin-form (path + query) as signed, e.g.
+    # /esam?channel=SportsFeed-East. The full target, not the bare URI path:
+    # the query is covered by the signature and must not be stripped.
     path: str
+    # channel the request actually targets (route/query/body-resolved); when
+    # set it must equal the Tier-2 scope channel.
     target_channel: Optional[str] = None
 
 
@@ -99,6 +106,13 @@ def verify_request(
     nonce = headers.nonce
     signature = headers.signature
 
+    # Version handling is a fixed security property, not a policy knob (see
+    # "Protocol version" in SESAME.md). X-SESAME-Version is NOT in the canonical
+    # string, so at Tiers 1/2 it is unauthenticated and an intermediary can
+    # rewrite it. Byte-exact equality makes any rewrite fail closed
+    # (INVALID_VERSION) rather than enabling a downgrade. Do NOT loosen this to
+    # accept other minor versions without first binding the version into the
+    # canonical string, or the downgrade reopens.
     if version != PROTOCOL_VERSION:
         raise SesameError(SesameErrorCode.INVALID_VERSION)
     if not tier1.check_freshness(timestamp, now_unix, cfg.replay_window_secs):

@@ -58,6 +58,8 @@ no trailing newline):
 <lowercase-hex SHA-256 of the body AS TRANSMITTED>
 ```
 
+The second field is the request-target in origin-form (`absolute-path [ "?" query ]`), taken byte-for-byte as transmitted with no decoding or normalization. It is the full request-target, **not** the bare URI path component of RFC 3986, which ends at the `?`. Where the channel travels in the query (`/esam?channel=<id>`) the query selects the channel and therefore SHALL be signed; a verifier that covers only the path leaves the query modifiable in transit, which is precisely the Tier 1 threat. The golden vector `tier1 request, query component signed` pins this.
+
 The body hash is over the transmitted body. With Tier 3 active the transmitted
 body is the ciphertext including the appended tag, so the scheme is
 encrypt-then-MAC. There is no version-prefix line and no key-id line.
@@ -179,6 +181,41 @@ in-memory cache reopens replay for the remainder of the window, and nodes that
 do not share a cache allow a request accepted by one to be replayed against
 another. Deployments that require strict replay protection across restarts or
 across nodes MUST back the `ReplayCache` seam with a shared store.
+
+## Protocol version
+
+`X-SESAME-Version` is `1.0`. Version handling is fixed by the rules below. They
+are normative because the header is security-relevant in a way its placement
+does not make obvious.
+
+1. A verifier SHALL compare `X-SESAME-Version` for exact equality against a
+   version it implements, and SHALL reject any other value with
+   `sesame_invalid_version` (400). The comparison is byte-exact: no case
+   folding, whitespace trimming, prefix matching, or numeric parsing of major or
+   minor parts.
+
+2. `X-SESAME-Version` is deliberately NOT part of the Tier 1 canonical string,
+   so at Tiers 1 and 2 it is unauthenticated and an intermediary can rewrite it.
+   It SHALL NOT be a negotiation input: no verification step, tier requirement,
+   or authorization decision may depend on its value beyond the accept-or-reject
+   of rule 1. Given rule 1, a rewritten version header can only cause a
+   rejection, never a change in the checks applied, so version tampering is a
+   fail-closed denial of service rather than a downgrade. Under Tier 3 the
+   version is additionally bound in the GCM AAD, so tampering there fails
+   decryption.
+
+3. Protocol extension proceeds by binding new security-relevant material into
+   the canonical string, exactly as Tier 2 scope binding does, not by version
+   negotiation. A verifier that does not implement a new signed field rejects on
+   signature mismatch, and an intermediary that strips one causes the same
+   rejection; both fail closed. Material with no bearing on verification MAY be
+   added without a version change and MAY be ignored by an older verifier.
+
+4. A verifier that accepts more than one protocol version SHALL bind the version
+   string into the canonical string as a covered field. Until a revision does
+   that, an implementation SHALL accept exactly one version. This precondition
+   is normative: minor-version tolerance without binding the version would
+   reopen the downgrade that rule 2 closes.
 
 ## Error codes
 
