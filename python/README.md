@@ -16,6 +16,13 @@ C++, or rust-pois verifier interoperate byte-for-byte.
 PyPI package: `sesame-esam`; import name: `sesame`. See
 [`../SESAME.md`](../SESAME.md) for the byte-exact wire format (draft v0.5).
 
+The threat model, protocol design, and performance results are published in
+B. Kelleher, ["SESAME: A Layered Security Framework for SCTE 130 ESAM with
+Sub-Millisecond Overhead"](https://revistas.set.org.br/ijbe/article/view/342),
+*SET International Journal of Broadcast Engineering*, vol. 12, 2026,
+doi:[10.18580/setijbe.2026.6](https://doi.org/10.18580/setijbe.2026.6). BibTeX
+is in the [main README](https://github.com/bokelleher/sesame-sdk#paper).
+
 ## Install
 
 ```sh
