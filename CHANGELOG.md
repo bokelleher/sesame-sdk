@@ -5,6 +5,14 @@ All notable changes to the SESAME SDK. The wire protocol is specified in
 interoperability contract; a release may add vectors but never alters a
 previously published `expected_*` value.
 
+## [0.1.4.post1] - 2026-10-10 (Python only)
+
+Documentation re-release of the Python package; no code change from 0.1.4. The
+README now cites the published SESAME paper (SET IJBE vol. 12, 2026,
+DOI 10.18580/setijbe.2026.6). This is also the first PyPI upload since 0.1.1, so
+`pip install sesame-esam` now picks up the 0.1.3 replay-cache fix and the 0.1.4
+hardening.
+
 ## [0.1.4] - 2026-08-20
 
 Hardening release. No wire-format change: every previously published golden
