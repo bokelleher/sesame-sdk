@@ -6,6 +6,11 @@ and Message Encryption) protocol implemented by the `sesame` crate. It mirrors
 reference implementation from which this crate was extracted. The golden vectors
 in [`test-vectors/`](test-vectors/) are the executable form of this document.
 
+The threat model, design rationale, and performance evaluation are published in
+the SET International Journal of Broadcast Engineering, vol. 12 (2026),
+[doi:10.18580/setijbe.2026.6](https://doi.org/10.18580/setijbe.2026.6). This
+document remains the byte-exact reference for the wire format.
+
 SESAME adds nothing to the ESAM XML. Tiers 1 and 2 leave the body untouched;
 Tier 3 replaces the body with ciphertext. No SCTE 130-2/-5/-7/-8 schema changes.
 

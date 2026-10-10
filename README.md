@@ -17,6 +17,9 @@ implementations in four languages, every one of which is proven byte-for-byte
 against a single shared set of conformance vectors. A signer written in any
 language and a verifier written in any other interoperate exactly.
 
+The threat model, protocol design, and performance results are published in the
+SET International Journal of Broadcast Engineering; see [Paper](#paper).
+
 | Tier | Capability | Mechanism |
 |---|---|---|
 | 0 | Unauthenticated baseline | no SESAME headers (backward compatible) |
@@ -158,6 +161,38 @@ sensitivity, and the cost of rejecting an invalid signature.
 The second one exists because the first cannot see the replay cache, and the
 replay cache is where the latency budget is actually won or lost. See
 [Cache maintenance](SESAME.md#cache-maintenance) in the spec.
+
+## Paper
+
+SESAME's threat model, protocol design, performance results, and proposed
+standardization path within SCTE 130 are published in:
+
+> Bo Kelleher, "SESAME: A Layered Security Framework for SCTE 130 ESAM with
+> Sub-Millisecond Overhead," *SET International Journal of Broadcast
+> Engineering*, vol. 12, 2026.
+> DOI: [10.18580/setijbe.2026.6](https://doi.org/10.18580/setijbe.2026.6)
+
+Read it on [SET IJBE](https://revistas.set.org.br/ijbe/article/view/342). For
+the wire format itself, [`SESAME.md`](SESAME.md) remains the byte-exact
+reference that the SDKs implement.
+
+To cite the paper:
+
+```bibtex
+@article{kelleher2026sesame,
+  author  = {Kelleher, Bo},
+  title   = {{SESAME}: A Layered Security Framework for {SCTE} 130 {ESAM}
+             with Sub-Millisecond Overhead},
+  journal = {SET International Journal of Broadcast Engineering},
+  volume  = {12},
+  year    = {2026},
+  doi     = {10.18580/setijbe.2026.6},
+  url     = {https://revistas.set.org.br/ijbe/article/view/342}
+}
+```
+
+GitHub's "Cite this repository" button offers the same reference, from
+[`CITATION.cff`](CITATION.cff).
 
 ## License
 

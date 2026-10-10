@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use SESAME in your work, please cite the paper below."
+title: "SESAME SDK"
+type: software
+authors:
+  - family-names: Kelleher
+    given-names: Bo
+repository-code: "https://github.com/bokelleher/sesame-sdk"
+url: "https://esam.dev"
+license:
+  - MIT
+  - Apache-2.0
+keywords:
+  - SCTE 130
+  - ESAM
+  - POIS
+  - SESAME
+  - HMAC-SHA256
+  - AES-256-GCM
+preferred-citation:
+  type: article
+  title: "SESAME: A Layered Security Framework for SCTE 130 ESAM with Sub-Millisecond Overhead"
+  authors:
+    - family-names: Kelleher
+      given-names: Bo
+  journal: "SET International Journal of Broadcast Engineering"
+  volume: 12
+  year: 2026
+  date-published: 2026-09-30
+  issn: "2446-9432"
+  doi: "10.18580/setijbe.2026.6"
+  url: "https://revistas.set.org.br/ijbe/article/view/342"
