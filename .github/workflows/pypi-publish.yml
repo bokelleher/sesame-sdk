@@ -1,0 +1,71 @@
+name: pypi-publish
+
+# Publishes the Python SDK (sesame-esam) to PyPI via Trusted Publishing (OIDC):
+# no API token is stored anywhere. PyPI trusts this exact workflow file in this
+# repo, running in the `pypi` environment, which only python-v* tags may deploy.
+#
+# Release: bump python/pyproject.toml + python/src/sesame/__init__.py, then push
+# an annotated python-v<version> tag. A manual run (workflow_dispatch) builds and
+# tests only; the publish job runs for tags alone.
+on:
+  push:
+    tags: ["python-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build + test the release artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # A tag that disagrees with the packaged version would publish the wrong
+      # number; PyPI versions can never be reused, so fail before building.
+      - name: Tag matches package version
+        if: github.ref_type == 'tag'
+        run: |
+          pkg=$(python -c 'import tomllib; print(tomllib.load(open("python/pyproject.toml", "rb"))["project"]["version"])')
+          test "${GITHUB_REF_NAME#python-v}" = "$pkg" || { echo "tag $GITHUB_REF_NAME != pyproject $pkg"; exit 1; }
+
+      # twine >= 7: hatchling emits Metadata-Version 2.5, which older twine
+      # rejects (this is what stalled the 0.1.4 upload).
+      - name: Build sdist + wheel
+        run: |
+          pip install build "twine>=7"
+          python -m build python --outdir dist
+          twine check dist/*
+
+      # Test the wheel that will ship, not the source tree: the same golden
+      # vectors and unit tests as the ci workflow's python job.
+      - name: Test the built wheel
+        run: |
+          pip install dist/*.whl pytest
+          pytest python/tests -q
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: publish to PyPI
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/sesame-esam/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
