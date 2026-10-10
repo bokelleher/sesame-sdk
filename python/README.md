@@ -3,7 +3,7 @@
 A native **Python** implementation of SESAME (Secure ESAM Authentication and
 Message Encryption), the proposed SCTE 130-9 security layer for the ESAM
 interface. A sibling of the Rust crate and C++ SDK in this repo, proven against
-the **same golden vectors** (`../test-vectors/`), so a Python signer and a Rust,
+the **same golden vectors** ([`test-vectors/`](https://github.com/bokelleher/sesame-sdk/tree/main/test-vectors)), so a Python signer and a Rust,
 C++, or rust-pois verifier interoperate byte-for-byte.
 
 - **Three tiers over a Tier-0 baseline:** HMAC-SHA256 auth (1), channel-scoped
@@ -14,7 +14,7 @@ C++, or rust-pois verifier interoperate byte-for-byte.
   `SesameError` (with `.code` and `.http_status`, Appendix A.7).
 
 PyPI package: `sesame-esam`; import name: `sesame`. See
-[`../SESAME.md`](../SESAME.md) for the byte-exact wire format (draft v0.5).
+[`SESAME.md`](https://github.com/bokelleher/sesame-sdk/blob/main/SESAME.md) for the byte-exact wire format (draft v0.5).
 
 The threat model, protocol design, and performance results are published in
 B. Kelleher, ["SESAME: A Layered Security Framework for SCTE 130 ESAM with
@@ -76,4 +76,4 @@ python examples/sign_request.py 3
 
 ## License
 
-Dual-licensed under [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE).
+Dual-licensed under [MIT](https://github.com/bokelleher/sesame-sdk/blob/main/LICENSE-MIT) or [Apache-2.0](https://github.com/bokelleher/sesame-sdk/blob/main/LICENSE-APACHE).
