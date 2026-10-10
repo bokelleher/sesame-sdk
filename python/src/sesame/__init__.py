@@ -30,7 +30,7 @@ from .protocol import (
 )
 from .replay import InMemoryReplayCache, ReplayCache
 
-__version__ = "0.1.4.post1"
+__version__ = "0.1.4.post2"
 
 __all__ = [
     "canonical",

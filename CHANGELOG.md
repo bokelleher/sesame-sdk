@@ -5,6 +5,12 @@ All notable changes to the SESAME SDK. The wire protocol is specified in
 interoperability contract; a release may add vectors but never alters a
 previously published `expected_*` value.
 
+## [0.1.4.post2] - 2026-10-10 (Python only)
+
+Documentation re-release of the Python package; no code change. The README's
+links to `SESAME.md`, the license files, and the test vectors are now absolute
+GitHub URLs, so they work on the PyPI project page.
+
 ## [0.1.4.post1] - 2026-10-10 (Python only)
 
 Documentation re-release of the Python package; no code change from 0.1.4. The
