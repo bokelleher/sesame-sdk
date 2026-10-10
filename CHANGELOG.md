@@ -9,9 +9,11 @@ previously published `expected_*` value.
 
 Documentation re-release of the Python package; no code change from 0.1.4. The
 README now cites the published SESAME paper (SET IJBE vol. 12, 2026,
-DOI 10.18580/setijbe.2026.6). This is also the first PyPI upload since 0.1.1, so
-`pip install sesame-esam` now picks up the 0.1.3 replay-cache fix and the 0.1.4
-hardening.
+DOI 10.18580/setijbe.2026.6). This is also the first PyPI upload since Python
+0.1.1 (Python 0.1.4 was tagged but never uploaded). Python 0.1.1 already carried
+the replay-cache fix; relative to it, this release adds the 0.1.4 request-target
+and version-handling documentation and fixes `sesame.__version__`, which
+reported `0.1.0` in 0.1.1. Python 0.1.1 is now yanked on PyPI.
 
 ## [0.1.4] - 2026-08-20
 
